@@ -22,93 +22,61 @@ void displayInfo(Mat &outputFrame, Scalar backgroundColor, int fontFace, double 
 int main(void)
 {
 	cout << "Vehicle Speed Estimation Using Optical Flow And 3D Modeling" << endl; cout << endl;
-
-
+	
 	FileStorage fs("parameters.yml", FileStorage::READ);
-
 	fs["Camera Matrix"] >> cameraMatrix;
-
 	fs["Distortion Coefficients"] >> distCoeffs;
-
 	fs["Rotation Vector"] >> rotationVector;
-
 	fs["Translation Vector"] >> translationVector;;
-
 	fs["Rotation Matrix"] >> rotationMatrix;
 
 	cout << "Camera Matrix: " << endl << cameraMatrix << endl; cout << endl;
-
 	cout << "Distortion Coefficients: " << endl << distCoeffs << endl; cout << endl;
-
 	cout << "Rotation Vector" << endl << rotationVector << endl; cout << endl;
-
 	cout << "Translation Vector: " << endl << translationVector << endl; cout << endl;
-
 	cout << "Rotation Matrix: " << endl << rotationMatrix << endl; cout << endl;
 
 
 	VideoCapture capture;
-
 	capture.open("traffic_chiangrak2.MOV");
 
 	if (!capture.isOpened())
 	{
 		cout << "Error loading file." << endl;
-
-		_getch;
-
+		system("pause");
 		return -1;
 	}
 
 	frameRate = capture.get(CV_CAP_PROP_FPS);
-
 	totalFrameCount = capture.get(CV_CAP_PROP_FRAME_COUNT);
-
 	frameHeight = capture.get(CV_CAP_PROP_FRAME_HEIGHT);
-
 	frameWidth = capture.get(CV_CAP_PROP_FRAME_WIDTH);
-
 	fourCC = capture.get(CV_CAP_PROP_FOURCC);
-
 	Size frameSize(frameWidth, frameHeight);
 
 	cout << "Video frame rate: " << frameRate << endl;
-
 	cout << "Video total frame count: " << totalFrameCount << endl;
-
 	cout << "Video frame height: " << frameHeight << endl;
-
 	cout << "Video frame width: " << frameWidth << endl;
-
 	cout << "Video Codec: " << fourCC << endl;
 
 	capture.read(currentFrame);
-
 	capture.read(nextFrame);
 
 	Mat mask(frameHeight, frameWidth, CV_8UC1, Scalar(1, 1, 1));
-
 	Point mask_points[1][3];
-
 	mask_points[0][0] = Point(0, 0);
-
 	mask_points[0][1] = Point(0, 342);
-
 	mask_points[0][2] = Point(296, 0);
-
 	const Point* ppt[1] = { mask_points[0] };
-
 	int npt[] = { 3 };
-
 	fillPoly(mask, ppt, npt, 1, Scalar(0, 0, 0), CV_AA);
 
 	int key = 0;
 
-
 	while (capture.isOpened() && key != 27)
 	{
 		currentFrameCount = capture.get(CV_CAP_PROP_POS_FRAMES) - 1;
-
 		timeElapsed = capture.get(CV_CAP_PROP_POS_MSEC) / 1000;
 
 		cvtColor(currentFrame, currentFrame_gray, CV_BGR2GRAY);
@@ -131,23 +99,19 @@ int main(void)
 		}
 
 		vector<vector<Point> > contours;
-
 		findContours(morph, contours, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
 
 		vector<Blob> currentFrameBlobs;
-
 		for (int i = 0; i < contours.size(); i++)
 		{
 			Rect rect = boundingRect(contours[i]);
 			double aspectRatio, diagonalSize;
 			aspectRatio = (double)rect.width / (double)rect.height;
-
 			diagonalSize = sqrt(pow(rect.width, 2) + pow(rect.height, 2));
 
 			if (rect.area() > 300 && aspectRatio > 0.2 && aspectRatio < 4.0 && rect.width > 20 && rect.height > 20 && diagonalSize > 50.0)
 			{
 				Blob blob(contours[i]);
-
 				currentFrameBlobs.push_back(blob);
 			}
 		}
@@ -162,64 +126,58 @@ int main(void)
 		}
 		else
 		{
-
 			matchBlobs(currentFrameBlobs);
 		}
 
 		Mat imgTracks = currentFrame.clone();
-
 		Mat imgCuboids = currentFrame.clone();
 
 		for (int i = 0; i < tracks.size(); i++)
 		{
 			if (tracks[i].getNoMatchCount() < 3 && tracks[i].getMatchCount() > 10)
 			{
-
 				Blob blob = tracks[i].getRecentBlob();
-
 				Cuboid cuboid = tracks[i].getRecentCuboid();
-
 				Scalar trackColor = tracks[i].getTrackColor();
-
+				
 				blob.drawBlob(imgTracks, trackColor, 2);
-
 				blob.drawBlobFlows(imgTracks, GREEN, 1);
-
 				blob.drawBlobInfo(imgTracks, trackColor, CV_FONT_HERSHEY_SIMPLEX, WHITE, 1);
 
 				tracks[i].drawBlobTrail(imgTracks, 10, trackColor, 2);
-
 				tracks[i].drawTrackInfoOnBlobs(imgTracks, trackColor, CV_FONT_HERSHEY_SIMPLEX, WHITE, 1);
 
 				cuboid.drawCuboid(imgCuboids, trackColor, 1);
-
 				tracks[i].drawCuboidTrail(imgCuboids, 10, trackColor, 2);
-
 				tracks[i].drawTrackInfoOnCuboids(imgCuboids, trackColor, CV_FONT_HERSHEY_SIMPLEX, WHITE, 1);
 
 			}
 
-			if (tracks[i].isTrackUpdated() == false) tracks[i].incrementNoMatchCount();
+			if (tracks[i].isTrackUpdated() == false)
+			{
+				tracks[i].incrementNoMatchCount();
+			}
 
-			if (tracks[i].getNoMatchCount() > 10) tracks[i].setBoolBeingTracked(false);
-
-			if (tracks[i].isBeingTracked() == false) tracks.erase(tracks.begin() + i);
+			if (tracks[i].getNoMatchCount() > 10)
+			{
+				tracks[i].setBoolBeingTracked(false);
+			}
+			if (tracks[i].isBeingTracked() == false)
+			{
+				tracks.erase(tracks.begin() + i);
+			}
 		}
 
 		displayInfo(imgTracks, BLACK, CV_FONT_HERSHEY_SIMPLEX, 0.35, WHITE);
-
 		displayInfo(imgCuboids, BLACK, CV_FONT_HERSHEY_SIMPLEX, 0.35, WHITE);
 
 		rectangle(imgTracks, Point((imgTracks.cols * 2 / 3) - 10, 0), Point(imgTracks.cols, 14), BLACK, -1, CV_AA);
-
 		putText(imgTracks, "Vehicle Detection and Tracking", Point((imgTracks.cols * 2 / 3) - 5, 10), CV_FONT_HERSHEY_SIMPLEX, 0.35, GREEN, 0.35, CV_AA);
 
 		imshow("Tracks", imgTracks);
-
 		imshow("Cuboids", imgCuboids);
 
 		currentFrame = nextFrame.clone();
-
 		capture.read(nextFrame);
 
 		key = waitKey(1000 / frameRate);
@@ -287,11 +245,15 @@ void displayInfo(Mat &outputFrame, Scalar backgroundColor, int fontFace, double 
 {
 	rectangle(outputFrame, Point(8, 20), Point(180, 35), backgroundColor, -1, CV_AA);
 	putText(outputFrame, "Frame Count: " + to_string(currentFrameCount) + " / " + to_string((int)totalFrameCount), Point(10, 30), fontFace, 0.35, fontColor, fontScale, CV_AA);
+	
 	rectangle(outputFrame, Point(8, 40), Point(180, 55), backgroundColor, -1, CV_AA);
 	putText(outputFrame, "Vehicle Count: " + to_string(trackCount), Point(10, 50), fontFace, fontScale, fontColor, 0.35, CV_AA);
+	
 	rectangle(outputFrame, Point(8, 60), Point(180, 75), backgroundColor, -1, CV_AA);
 	putText(outputFrame, "Being Tracked: " + to_string(tracks.size()), Point(10, 70), fontFace, fontScale, fontColor, 0.35, CV_AA);
+	
 	rectangle(outputFrame, Point(8, 80), Point(180, 95), backgroundColor, -1, CV_AA);
 	putText(outputFrame, "Time Elapsed: " + to_string(timeElapsed), Point(10, 90), fontFace, fontScale, fontColor, 0.35, CV_AA);
+	
 	putText(outputFrame, "Vehicle Speed Estimation Using Optical Flow And 3D Modeling by Indrajeet Datta", Point(5, imgTracks.rows - 10), fontFace, 0.3, fontColor, fontScale, CV_AA);
 }

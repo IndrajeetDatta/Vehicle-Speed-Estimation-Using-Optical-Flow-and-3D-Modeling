@@ -10,8 +10,11 @@ using namespace cv;
 Cuboid::Cuboid(Point3f &point, float initialLength, float intialWidth, float height, float angleOfMotion)
 {
 	length_ = initialLength;
+	
 	width_ = intialWidth;
+	
 	height_ = height;
+	
 	angleOfMotion_ = angleOfMotion;
 
 	b1_ = Point3f(point.x, point.y, 0.0);

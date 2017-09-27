@@ -11,23 +11,23 @@ extern float frameRate, timeElapsed, totalFrameCount, frameHeight, frameWidth, f
 
 extern int currentFrameCount;
 
-extern const Scalar WHITE = Scalar(255, 255, 255), BLACK = Scalar(0, 0, 0), BLUE = Scalar(255, 0, 0), GREEN = Scalar(0, 255, 0), RED = Scalar(0, 0, 255), YELLOW = Scalar(0, 255, 255);
+extern const Scalar WHITE, BLACK, BLUE, GREEN, RED, YELLOW;
 
 extern Mat currentFrame, nextFrame, currentFrame_gray, nextFrame_gray, currentFrame_blur, nextFrame_blur, morph, diff, thresh, videoMask, imgCuboids, imgTracks;
 
-extern const Point3f cameraCenter = Point3f(1.80915, -8.95743, 8.52165);
+extern const Point3f cameraCenter;
 
-extern const float initialCuboidLength = 5, initialCuboidWidth = 2, initialCuboidHeight = 1.5;
+extern const float initialCuboidLength, initialCuboidWidth, initialCuboidHeight;
 
-extern Point3f findWorldPoint(const Point2f &imagePoint, double zConst, const Mat &cameraMatrix, const Mat &rotationMatrix, const Mat &translationVector);
+Point3f findWorldPoint(const Point2f &imagePoint, double zConst, const Mat &cameraMatrix, const Mat &rotationMatrix, const Mat &translationVector);
 
-extern float distanceBetweenPoints(Point2f point1, Point point2);
+float distanceBetweenPoints(Point2f point1, Point point2);
 
-extern float distanceBetweenPoints(Point3f point1, Point3f point2);
+float distanceBetweenPoints(Point3f point1, Point3f point2);
 
-extern bool pointInside(vector<Point3f> points, Point3f point);
+bool pointInside(vector<Point3f> points, Point3f point);
 
-extern vector<vector<Point3f> >findFlowsProjectedOnPlanes(vector<vector<float> > planeParameters, vector<vector<Point3f> > planeVertices, vector<Point3f> groundPlaneFlowPoints, Point3f cameraCenter);
+vector<vector<Point3f> >findFlowsProjectedOnPlanes(vector<vector<float> > planeParameters, vector<vector<Point3f> > planeVertices, vector<Point3f> groundPlaneFlowPoints, Point3f cameraCenter);
 
 
 
