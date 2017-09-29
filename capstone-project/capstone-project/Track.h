@@ -10,8 +10,8 @@ private:
 
 	vector<Blob> blobs_;
 	vector<Cuboid> cuboids_;
-	vector<float> instantaneousSpeed_;
-	float averageSpeed_, averageFlowDistanceX_, averageFlowDistanceY_, angleOfMotion_;
+	vector<float> instantaneousSpeeds_;
+	float averageSpeed_;
 	bool trackUpdated_;
 	bool beingTracked_;
 	int matchCount_;
@@ -33,8 +33,8 @@ public:
 	int getNoMatchCount() const { return noMatchCount_; }
 	int	getTrackNumber() const { return trackNumber_; }
 	Scalar getTrackColor() const { return trackColor_; }
-	Blob getRecentBlob() const { return blobs_.back(); }
-	Cuboid getRecentCuboid() const { return cuboids_.back(); }
+	Blob getPrevBlob() const { return blobs_.back(); }
+	Cuboid getPrevCuboid() const { return cuboids_.back(); }
 	vector<vector<Point3f> > getPlaneProjectedFlowTails() { return planeProjectedFlowTails_; }
 	vector<vector<Point3f> > getPlaneProjectedFlowHeads() { return planeProjectedFlowHeads_; }
 
@@ -45,7 +45,7 @@ public:
 	void incrementNoMatchCount() { noMatchCount_++; }
 	void clearNoMatchCount() { noMatchCount_ = 0; }
 	void setTrackNumber(int value) { trackNumber_ = value; }
-
+	float findAverageSpeed();
 
 
 	void drawBlobTrail(Mat &outputFrame, int trailLength, Scalar trailColor, int trailThickness);

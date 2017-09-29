@@ -8,7 +8,7 @@ using namespace std;
 
 Mat cameraMatrix, distCoeffs, rotationVector, translationVector, rotationMatrix, inverseHomographyMatrix;
 
-float frameRate, timeElapsed, totalFrameCount, frameHeight, frameWidth, fourCC;
+float frameRate, videoTimeElapsed, realTimeElapsed, totalFrameCount, frameHeight, frameWidth, fourCC;
 
 int currentFrameCount;
 
@@ -19,16 +19,6 @@ Mat currentFrame, nextFrame, currentFrame_gray, nextFrame_gray, currentFrame_blu
 const Point3f cameraCenter = Point3f(1.80915, -8.95743, 8.52165);
 
 const float initialCuboidLength = 5, initialCuboidWidth = 2, initialCuboidHeight = 1.5;
-
-Point3f findWorldPoint(const Point2f &imagePoint, double zConst, const Mat &cameraMatrix, const Mat &rotationMatrix, const Mat &translationVector);
-
-float distanceBetweenPoints(Point2f point1, Point point2);
-
-float distanceBetweenPoints(Point3f point1, Point3f point2);
-
-bool pointInside(vector<Point3f> points, Point3f point);
-
-vector<vector<Point3f> >findFlowsProjectedOnPlanes(vector<vector<float> > planeParameters, vector<vector<Point3f> > planeVertices, vector<Point3f> groundPlaneFlowPoints, Point3f cameraCenter);
 
 Point3f findWorldPoint(const Point2f &imagePoint, double zConst, const Mat &cameraMatrix, const Mat &rotationMatrix, const Mat &translationVector)
 {
@@ -54,7 +44,13 @@ Point3f findWorldPoint(const Point2f &imagePoint, double zConst, const Mat &came
 
 	return worldPoint;
 }
+float distanceBetweenPoints(Point2f point1, Point2f point2)
+{
+	float x = abs(point1.x - point2.x);
+	float y = abs(point1.y - point2.y);
 
+	return(sqrt(pow(x, 2) + pow(y, 2)));
+}
 float distanceBetweenPoints(Point2f point1, Point point2)
 {
 	float x = abs(point1.x - point2.x);
@@ -103,31 +99,3 @@ bool pointInside(vector<Point3f> points, Point3f point)
 	}
 }
 
-vector<vector<Point3f> >findFlowsProjectedOnPlanes(vector<vector<float> > planeParameters, vector<vector<Point3f> > planeVertices, vector<Point3f> groundPlaneFlowPoints, Point3f cameraCenter)
-{
-
-	vector<vector<Point3f> > projectedFlowPointsOnPlanes;
-
-	for (int i = 0; i < planeParameters.size(); i++)
-	{
-		vector<Point3f> points;
-		for (int j = 0; j < groundPlaneFlowPoints.size(); j++)
-		{
-			float t = (-(planeParameters[i][0] * cameraCenter.x + planeParameters[i][1] * cameraCenter.y + planeParameters[i][2] * cameraCenter.z + planeParameters[i][3])) / planeParameters[i][0] * (groundPlaneFlowPoints[j].x - cameraCenter.x) + planeParameters[i][1] * (groundPlaneFlowPoints[j].y - cameraCenter.y) + planeParameters[i][2] * (-cameraCenter.z);
-
-
-			Point3f projectedFlowPoint = Point3f(cameraCenter.x + (groundPlaneFlowPoints[j].x - cameraCenter.x) * t, cameraCenter.y + (groundPlaneFlowPoints[j].y - cameraCenter.y) * t, cameraCenter.z - cameraCenter.z * t);
-			bool inside = pointInside(planeVertices[i], projectedFlowPoint);
-			//cout << inside << endl;
-			if (inside)
-			{
-				points.push_back(projectedFlowPoint);
-				//cout << projectedFlowPoint << " is pushed backed." << endl;
-				cout << endl;
-			}
-		}
-		projectedFlowPointsOnPlanes.push_back(points);
-	}
-
-	return projectedFlowPointsOnPlanes;
-}

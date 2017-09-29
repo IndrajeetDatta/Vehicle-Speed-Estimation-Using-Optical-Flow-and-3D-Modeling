@@ -2,12 +2,13 @@
 #include <iostream>
 #include <conio.h>
 #include <string>
-#include <iomanip>
+#include <time.h>
 
 #include "global.h"
 #include "Blob.h"
 #include "Cuboid.h"
 #include "Track.h"
+
 
 using namespace cv;
 using namespace std;
@@ -21,6 +22,7 @@ void displayInfo(Mat &outputFrame, Scalar backgroundColor, int fontFace, double 
 
 int main(void)
 {
+
 	cout << "Vehicle Speed Estimation Using Optical Flow And 3D Modeling" << endl; cout << endl;
 	
 	FileStorage fs("parameters.yml", FileStorage::READ);
@@ -74,10 +76,13 @@ int main(void)
 
 	int key = 0;
 
+	time_t startTime = time(0);
+
 	while (capture.isOpened() && key != 27)
 	{
 		currentFrameCount = capture.get(CV_CAP_PROP_POS_FRAMES) - 1;
-		timeElapsed = capture.get(CV_CAP_PROP_POS_MSEC) / 1000;
+		videoTimeElapsed = capture.get(CV_CAP_PROP_POS_MSEC) / 1000;
+		realTimeElapsed = difftime(time(0), startTime);
 
 		cvtColor(currentFrame, currentFrame_gray, CV_BGR2GRAY);
 		cvtColor(nextFrame, nextFrame_gray, CV_BGR2GRAY);
@@ -136,8 +141,8 @@ int main(void)
 		{
 			if (tracks[i].getNoMatchCount() < 3 && tracks[i].getMatchCount() > 10)
 			{
-				Blob blob = tracks[i].getRecentBlob();
-				Cuboid cuboid = tracks[i].getRecentCuboid();
+				Blob blob = tracks[i].getPrevBlob();
+				Cuboid cuboid = tracks[i].getPrevCuboid();
 				Scalar trackColor = tracks[i].getTrackColor();
 				
 				blob.drawBlob(imgTracks, trackColor, 2);
@@ -174,7 +179,7 @@ int main(void)
 		rectangle(imgTracks, Point((imgTracks.cols * 2 / 3) - 10, 0), Point(imgTracks.cols, 14), BLACK, -1, CV_AA);
 		putText(imgTracks, "Vehicle Detection and Tracking", Point((imgTracks.cols * 2 / 3) - 5, 10), CV_FONT_HERSHEY_SIMPLEX, 0.35, GREEN, 0.35, CV_AA);
 
-		imshow("Tracks", imgTracks);
+		//imshow("Tracks", imgTracks);
 		imshow("Cuboids", imgCuboids);
 
 		currentFrame = nextFrame.clone();
@@ -202,7 +207,7 @@ void matchBlobs(vector<Blob> &blobs)
 		{
 			double sumDistances = 0;
 
-			vector<Point2f> flowHeads = tracks[j].getRecentBlob().getFlowHeads();
+			vector<Point2f> flowHeads = tracks[j].getPrevBlob().getFlowHeads();
 
 			for (int k = 0; k < flowHeads.size(); k++)
 			{
@@ -243,17 +248,23 @@ void matchBlobs(vector<Blob> &blobs)
 
 void displayInfo(Mat &outputFrame, Scalar backgroundColor, int fontFace, double fontScale, Scalar fontColor)
 {
+	rectangle(outputFrame, Point(8, 0), Point(180, 15), backgroundColor, -1, CV_AA);
+	putText(outputFrame, "Time Elapsed: " + to_string((int)realTimeElapsed) + " s", Point(10, 10), fontFace, fontScale, fontColor, 0.35, CV_AA);
+
 	rectangle(outputFrame, Point(8, 20), Point(180, 35), backgroundColor, -1, CV_AA);
-	putText(outputFrame, "Frame Count: " + to_string(currentFrameCount) + " / " + to_string((int)totalFrameCount), Point(10, 30), fontFace, 0.35, fontColor, fontScale, CV_AA);
-	
+	putText(outputFrame, "Video Time Elapsed: " + to_string((int)videoTimeElapsed) + " s", Point(10, 30), fontFace, fontScale, fontColor, 0.35, CV_AA);
+
 	rectangle(outputFrame, Point(8, 40), Point(180, 55), backgroundColor, -1, CV_AA);
-	putText(outputFrame, "Vehicle Count: " + to_string(trackCount), Point(10, 50), fontFace, fontScale, fontColor, 0.35, CV_AA);
-	
+	putText(outputFrame, "Av. Processing Rate: " + to_string((int)(currentFrameCount / realTimeElapsed)) + " fps", Point(10, 50), fontFace, fontScale, fontColor, 0.35, CV_AA);
+
 	rectangle(outputFrame, Point(8, 60), Point(180, 75), backgroundColor, -1, CV_AA);
-	putText(outputFrame, "Being Tracked: " + to_string(tracks.size()), Point(10, 70), fontFace, fontScale, fontColor, 0.35, CV_AA);
+	putText(outputFrame, "Frame Count: " + to_string(currentFrameCount) + " / " + to_string((int)totalFrameCount), Point(10, 70), fontFace, 0.35, fontColor, fontScale, CV_AA);
 	
 	rectangle(outputFrame, Point(8, 80), Point(180, 95), backgroundColor, -1, CV_AA);
-	putText(outputFrame, "Time Elapsed: " + to_string(timeElapsed), Point(10, 90), fontFace, fontScale, fontColor, 0.35, CV_AA);
+	putText(outputFrame, "Vehicle Count: " + to_string(trackCount), Point(10, 90), fontFace, fontScale, fontColor, 0.35, CV_AA);
+	
+	rectangle(outputFrame, Point(8, 100), Point(180, 115), backgroundColor, -1, CV_AA);
+	putText(outputFrame, "Being Tracked: " + to_string(tracks.size()), Point(10, 110), fontFace, fontScale, fontColor, 0.35, CV_AA);
 	
 	putText(outputFrame, "Vehicle Speed Estimation Using Optical Flow And 3D Modeling by Indrajeet Datta", Point(5, imgTracks.rows - 10), fontFace, 0.3, fontColor, fontScale, CV_AA);
 }

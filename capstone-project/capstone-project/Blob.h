@@ -11,6 +11,8 @@ private:
 	float area_, width_, height_, diagonalSize_, aspectRatio_;
 	Point  center_, bottomLeftCorner_, bottomRightCorner_, topLeftCorner_, topRightCorner_;
 	vector<Point2f> flowTails_, flowHeads_;
+	vector<Point3f> groundPlaneFlowTails_, groundPlaneFlowHeads_;
+	float averageFlowDistanceX_, averageFlowDistanceY_, angleOfMotion_;
 
 public:
 
@@ -33,6 +35,11 @@ public:
 	Point getTopRightCorner() const { return topRightCorner_; }
 	vector<Point2f>getFlowTails() const { return flowTails_; }
 	vector<Point2f> getFlowHeads() const { return flowHeads_; }
+	vector<Point3f> getGroundPlaneFlowTails() const { return groundPlaneFlowTails_; }
+	vector<Point3f> getGroundPlaneFlowHeads() const { return groundPlaneFlowHeads_; }
+	float getAverageFlowDistanceX() const { return averageFlowDistanceX_; }
+	float getAverageFlowDistanceY() const { return averageFlowDistanceY_; }
+	float getAngleOfMotion() const { return angleOfMotion_; }
 
 	void drawBlob(Mat &outputFrame, Scalar rectColor, int rectThickness, Scalar contourColor = BLUE, int contourThickness = 1, Scalar centerColor = GREEN, int centerThickness = 1);
 	void drawBlobFlows(Mat &outputFrame, Scalar flowColor, int flowThickness);

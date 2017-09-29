@@ -11,7 +11,8 @@ private:
 	vector<Point3f> vertices_;
 	vector<Point2f> imagePlaneProjectedVertices_;
 	vector<vector<float> > planeParameters_;
-	vector<vector<Point3f> > planeVertices_;
+	vector<vector<Point3f>> planeVertices_;
+	vector <vector<Point2f>> measuredOpticalFlowHeads_;
 
 public:
 
@@ -29,7 +30,8 @@ public:
 	vector <vector<Point3f> > getPlaneVertices() { return planeVertices_; }
 	vector<Point2f> getProjectedVertices() const { return imagePlaneProjectedVertices_; }
 	vector<vector<float> > getPlaneParameters() const { return planeParameters_; }
-
+	void setMeasuredOpticalFlowHeads(vector<vector<Point2f>> flowHeads) { measuredOpticalFlowHeads_ = flowHeads; }
+	vector<vector<Point2f>> getMeasuredOpticalFlowHeads() { return measuredOpticalFlowHeads_; }
 	void drawCuboid(Mat &outputFrame, Scalar color, int lineThickness);
 };
 

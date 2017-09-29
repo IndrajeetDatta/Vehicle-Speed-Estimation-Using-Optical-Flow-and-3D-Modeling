@@ -11,19 +11,13 @@ Blob::Blob(const vector<Point> &contour)
 {
 
 	contour_ = contour;
-	
 	boundingRectangle_ = boundingRect(contour);
-	
 	area_ = boundingRectangle_.area();
-	
 	width_ = boundingRectangle_.width;
-	
 	height_ = boundingRectangle_.height;
-	
 	aspectRatio_ = (float)boundingRectangle_.width / (float)boundingRectangle_.height;
-	
 	diagonalSize_ = sqrt(pow(boundingRectangle_.width, 2) + pow(boundingRectangle_.height, 2));
-
+	
 	center_ = Point((boundingRectangle_.x + boundingRectangle_.width / 2), (boundingRectangle_.y + boundingRectangle_.height / 2));
 
 	topRightCorner_ = Point(boundingRectangle_.x, boundingRectangle_.y);
@@ -35,28 +29,49 @@ Blob::Blob(const vector<Point> &contour)
 	Mat mask(Size(frameWidth, frameHeight), CV_8UC1, BLACK);
 	
 	vector<vector<Point> > contours;
-	
 	contours.push_back(contour_);
-	
 	drawContours(mask, contours, -1, WHITE, -1, CV_AA);
 	
 	vector<Point2f> flowTails;
-	
 	goodFeaturesToTrack(currentFrame_gray, flowTails, 100, 0.01, 5, mask);
-	
 	cornerSubPix(currentFrame_gray, flowTails, Size(10, 10), Size(-1, -1), TermCriteria(TermCriteria::MAX_ITER | TermCriteria::EPS, 20, 0.03));
 	
 	flowTails_ = flowTails;
 	
 	int win_size = 10;
-
 	vector<uchar> status;
-	
 	vector<float> error;
 	
 	calcOpticalFlowPyrLK(currentFrame_gray, nextFrame_gray, flowTails_, flowHeads_, status, error, Size(win_size * 2 + 1, win_size * 2 + 1), 5, TermCriteria(TermCriteria::MAX_ITER | TermCriteria::EPS, 20, 0.3));
 
+	for (int i = 0; i < flowTails_.size(); i++)
+	{
+		Point3f point = findWorldPoint(Point2f(flowTails[i]), 0.0, cameraMatrix, rotationMatrix, translationVector);
+		groundPlaneFlowTails_.push_back(point);
+	}
+	for (int i = 0; i < flowHeads_.size(); i++)
+	{
+		Point3f point = findWorldPoint(Point2f(flowHeads_[i]), 0.0, cameraMatrix, rotationMatrix, translationVector);
+		groundPlaneFlowHeads_.push_back(point);
+	}
+
+	double totalDx = 0, totalDy = 0;
+
+	for (int i = 0; i < groundPlaneFlowTails_.size(); i++)
+	{
+		double dx = groundPlaneFlowHeads_[i].x - groundPlaneFlowTails_[i].x;
+		double dy = groundPlaneFlowHeads_[i].y - groundPlaneFlowTails_[i].y;
+
+		totalDx = totalDx + dx;
+		totalDy = totalDy + dy;
+	}
+
+	averageFlowDistanceX_ = totalDx / groundPlaneFlowTails_.size();
+	averageFlowDistanceY_ = totalDy / groundPlaneFlowTails_.size();
+	angleOfMotion_ = atan(averageFlowDistanceX_ / averageFlowDistanceY_);
 }
+
+
 
 Blob::~Blob() {}
 
