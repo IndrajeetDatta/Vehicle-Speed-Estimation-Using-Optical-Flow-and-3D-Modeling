@@ -153,6 +153,9 @@ Cuboid::Cuboid(Point3f &point, float initialLength, float intialWidth, float hei
 	planeParameters_.push_back(bottomPlaneParameters);
 
 }
+Cuboid::Cuboid() {};
+Cuboid::~Cuboid() {};
+
 void Cuboid::drawCuboid(Mat &outputFrame, Scalar color, int lineThickness)
 {
 	bool inFrame = true;
@@ -201,4 +204,3 @@ void Cuboid::drawCuboid(Mat &outputFrame, Scalar color, int lineThickness)
 		}
 	}
 }
-Cuboid::~Cuboid() {};

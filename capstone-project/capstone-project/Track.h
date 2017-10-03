@@ -10,6 +10,7 @@ private:
 
 	vector<Blob> blobs_;
 	vector<Cuboid> cuboids_;
+	float cuboidLength, cuboidWidth, cuboidHeight, cuboidAngleOfMotion;
 	vector<float> instantaneousSpeeds_;
 	float averageSpeed_;
 	bool trackUpdated_;

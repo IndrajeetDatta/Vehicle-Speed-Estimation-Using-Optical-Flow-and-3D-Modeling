@@ -17,6 +17,7 @@ private:
 public:
 
 	Blob(const vector<Point> &contour);
+	Blob();
 	~Blob();
 
 	//getter functions

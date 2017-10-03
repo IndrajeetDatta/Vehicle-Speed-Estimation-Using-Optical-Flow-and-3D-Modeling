@@ -17,6 +17,7 @@ private:
 public:
 
 	Cuboid(Point3f &point, float length, float width, float height, float angleOfMotion);
+	Cuboid();
 	~Cuboid();
 
 	float getLength() const { return length_; }
@@ -27,7 +28,7 @@ public:
 	Point3f getCentroid() const { return centroid_; }
 	Point2f getProjectedCentroid() const { return projectedCentroid_; }
 	vector<Point3f> getVertices() const { return vertices_; }
-	vector <vector<Point3f> > getPlaneVertices() { return planeVertices_; }
+	vector <vector<Point3f> > getPlaneVertices() const{ return planeVertices_; }
 	vector<Point2f> getProjectedVertices() const { return imagePlaneProjectedVertices_; }
 	vector<vector<float> > getPlaneParameters() const { return planeParameters_; }
 	void setMeasuredOpticalFlowHeads(vector<vector<Point2f>> flowHeads) { measuredOpticalFlowHeads_ = flowHeads; }

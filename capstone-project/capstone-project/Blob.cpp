@@ -71,7 +71,7 @@ Blob::Blob(const vector<Point> &contour)
 	angleOfMotion_ = atan(averageFlowDistanceX_ / averageFlowDistanceY_);
 }
 
-
+Blob::Blob() {}
 
 Blob::~Blob() {}
 
