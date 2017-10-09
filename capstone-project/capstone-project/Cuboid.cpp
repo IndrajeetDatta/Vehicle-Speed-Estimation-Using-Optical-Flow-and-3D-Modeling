@@ -164,43 +164,42 @@ void Cuboid::drawCuboid(Mat &outputFrame, Scalar color, int lineThickness)
 	{
 		if (imagePlaneProjectedVertices_[i].x > outputFrame.cols || imagePlaneProjectedVertices_[i].y > outputFrame.rows)
 		{
-			inFrame = true;
-		}
-
-		if (inFrame)
-		{
-			line(outputFrame, imagePlaneProjectedVertices_[0], imagePlaneProjectedVertices_[1], color, lineThickness, CV_AA);
-
-			line(outputFrame, imagePlaneProjectedVertices_[1], imagePlaneProjectedVertices_[3], color, lineThickness, CV_AA);
-
-			line(outputFrame, imagePlaneProjectedVertices_[3], imagePlaneProjectedVertices_[2], color, lineThickness, CV_AA);
-
-			line(outputFrame, imagePlaneProjectedVertices_[2], imagePlaneProjectedVertices_[0], color, lineThickness, CV_AA);
-
-			line(outputFrame, imagePlaneProjectedVertices_[4], imagePlaneProjectedVertices_[5], color, lineThickness, CV_AA);
-
-			line(outputFrame, imagePlaneProjectedVertices_[5], imagePlaneProjectedVertices_[7], color, lineThickness, CV_AA);
-
-			line(outputFrame, imagePlaneProjectedVertices_[7], imagePlaneProjectedVertices_[6], color, lineThickness, CV_AA);
-
-			line(outputFrame, imagePlaneProjectedVertices_[6], imagePlaneProjectedVertices_[4], color, lineThickness, CV_AA);
-
-			line(outputFrame, imagePlaneProjectedVertices_[0], imagePlaneProjectedVertices_[4], color, lineThickness, CV_AA);
-
-			line(outputFrame, imagePlaneProjectedVertices_[1], imagePlaneProjectedVertices_[5], color, lineThickness, CV_AA);
-
-			line(outputFrame, imagePlaneProjectedVertices_[2], imagePlaneProjectedVertices_[6], color, lineThickness, CV_AA);
-
-			line(outputFrame, imagePlaneProjectedVertices_[3], imagePlaneProjectedVertices_[7], color, lineThickness, CV_AA);
-
-			/*putText(outputFrame, "b1", imagePlaneProjectedVertices_[0], CV_FONT_HERSHEY_SIMPLEX, 0.25, WHITE, 0.25, CV_AA);
-			putText(outputFrame, "b2", imagePlaneProjectedVertices_[1], CV_FONT_HERSHEY_SIMPLEX, 0.25, WHITE, 0.25, CV_AA);
-			putText(outputFrame, "b3", imagePlaneProjectedVertices_[2], CV_FONT_HERSHEY_SIMPLEX, 0.25, WHITE, 0.25, CV_AA);
-			putText(outputFrame, "b4", imagePlaneProjectedVertices_[3], CV_FONT_HERSHEY_SIMPLEX, 0.25, WHITE, 0.25, CV_AA);
-			putText(outputFrame, "t1", imagePlaneProjectedVertices_[4], CV_FONT_HERSHEY_SIMPLEX, 0.25, WHITE, 0.25, CV_AA);
-			putText(outputFrame, "t2", imagePlaneProjectedVertices_[5], CV_FONT_HERSHEY_SIMPLEX, 0.25, WHITE, 0.25, CV_AA);
-			putText(outputFrame, "t3", imagePlaneProjectedVertices_[6], CV_FONT_HERSHEY_SIMPLEX, 0.25, WHITE, 0.25, CV_AA);
-			putText(outputFrame, "t4", imagePlaneProjectedVertices_[7], CV_FONT_HERSHEY_SIMPLEX, 0.25, WHITE, 0.25, CV_AA);*/
+			inFrame = false;
 		}
 	}
+	if (inFrame)
+	{
+		line(outputFrame, imagePlaneProjectedVertices_[0], imagePlaneProjectedVertices_[1], color, lineThickness, CV_AA);
+
+		line(outputFrame, imagePlaneProjectedVertices_[1], imagePlaneProjectedVertices_[3], color, lineThickness, CV_AA);
+
+		line(outputFrame, imagePlaneProjectedVertices_[3], imagePlaneProjectedVertices_[2], color, lineThickness, CV_AA);
+
+		line(outputFrame, imagePlaneProjectedVertices_[2], imagePlaneProjectedVertices_[0], color, lineThickness, CV_AA);
+
+		line(outputFrame, imagePlaneProjectedVertices_[4], imagePlaneProjectedVertices_[5], color, lineThickness, CV_AA);
+
+		line(outputFrame, imagePlaneProjectedVertices_[5], imagePlaneProjectedVertices_[7], color, lineThickness, CV_AA);
+
+		line(outputFrame, imagePlaneProjectedVertices_[7], imagePlaneProjectedVertices_[6], color, lineThickness, CV_AA);
+
+		line(outputFrame, imagePlaneProjectedVertices_[6], imagePlaneProjectedVertices_[4], color, lineThickness, CV_AA);
+
+		line(outputFrame, imagePlaneProjectedVertices_[0], imagePlaneProjectedVertices_[4], color, lineThickness, CV_AA);
+
+		line(outputFrame, imagePlaneProjectedVertices_[1], imagePlaneProjectedVertices_[5], color, lineThickness, CV_AA);
+
+		line(outputFrame, imagePlaneProjectedVertices_[2], imagePlaneProjectedVertices_[6], color, lineThickness, CV_AA);
+
+		line(outputFrame, imagePlaneProjectedVertices_[3], imagePlaneProjectedVertices_[7], color, lineThickness, CV_AA);
+
+		putText(outputFrame, "Length: " + to_string(length_), Point2f(imagePlaneProjectedVertices_[0].x, imagePlaneProjectedVertices_[0].y + 10), CV_FONT_HERSHEY_SIMPLEX, 0.3, WHITE, 1, CV_AA);
+
+		putText(outputFrame, "Width: " + to_string(width_), Point2f(imagePlaneProjectedVertices_[0].x, imagePlaneProjectedVertices_[0].y + 30), CV_FONT_HERSHEY_SIMPLEX, 0.3, WHITE, 1, CV_AA);
+
+		putText(outputFrame, "Height: " + to_string(height_), Point2f(imagePlaneProjectedVertices_[0].x, imagePlaneProjectedVertices_[0].y + 50), CV_FONT_HERSHEY_SIMPLEX, 0.3, WHITE, 1, CV_AA);
+
+		putText(outputFrame, "Angle: " + to_string(angleOfMotion_), Point2f(imagePlaneProjectedVertices_[0].x, imagePlaneProjectedVertices_[0].y + 70), CV_FONT_HERSHEY_SIMPLEX, 0.3, WHITE, 1, CV_AA);
+	}
 }
+

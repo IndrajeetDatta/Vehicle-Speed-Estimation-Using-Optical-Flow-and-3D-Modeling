@@ -154,7 +154,7 @@ int main(void)
 
 				cuboid.drawCuboid(imgCuboids, trackColor, 1);
 				tracks[i].drawCuboidTrail(imgCuboids, 10, trackColor, 2);
-				tracks[i].drawTrackInfoOnCuboids(imgCuboids, trackColor, CV_FONT_HERSHEY_SIMPLEX, WHITE, 1);
+				//tracks[i].drawTrackInfoOnCuboids(imgCuboids, trackColor, CV_FONT_HERSHEY_SIMPLEX, WHITE, 1);
 
 			}
 

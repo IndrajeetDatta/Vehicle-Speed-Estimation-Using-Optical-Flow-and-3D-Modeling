@@ -26,42 +26,43 @@ struct LMFunctor
 
 	int operator()(const VectorXf &x, VectorXf &fvec) const
 	{
-		float length = x(0);
-		float width = x(1);
-		float height = x(2);
-		float angleOfMotion = x(3);
+		float param_length = x(0);
+		float param_width = x(1);
+		float param_height = x(2);
+		float param_motionX = x(3);
+		float param_motionY = x(4);
 
 		vector<vector<float> > planeParameters;
 
 		vector<float> frontPlaneParameters;
-		frontPlaneParameters.push_back(-cos(angleOfMotion));
-		frontPlaneParameters.push_back(sin(angleOfMotion));
+		frontPlaneParameters.push_back(-cos(blob.getAngleOfMotion()));
+		frontPlaneParameters.push_back(sin(blob.getAngleOfMotion()));
 		frontPlaneParameters.push_back(0);
-		frontPlaneParameters.push_back((length / 2) + cuboid.getCentroid().x * cos(angleOfMotion) - cuboid.getCentroid().y * sin(angleOfMotion));
+		frontPlaneParameters.push_back((param_length / 2) + cuboid.getCentroid().x * cos(blob.getAngleOfMotion()) - cuboid.getCentroid().y * sin(blob.getAngleOfMotion()));
 
 		planeParameters.push_back(frontPlaneParameters);
 
 		vector<float> rightPlaneParameters;
-		rightPlaneParameters.push_back(cos(angleOfMotion));
-		rightPlaneParameters.push_back(sin(angleOfMotion));
+		rightPlaneParameters.push_back(cos(blob.getAngleOfMotion()));
+		rightPlaneParameters.push_back(sin(blob.getAngleOfMotion()));
 		rightPlaneParameters.push_back(0);
-		rightPlaneParameters.push_back((width) / 2 - cuboid.getCentroid().x * cos(angleOfMotion) - cuboid.getCentroid().y * sin(angleOfMotion));
+		rightPlaneParameters.push_back((param_width) / 2 - cuboid.getCentroid().x * cos(blob.getAngleOfMotion()) - cuboid.getCentroid().y * sin(blob.getAngleOfMotion()));
 
 		planeParameters.push_back(rightPlaneParameters);
 
 		vector<float> backPlaneParameters;
-		backPlaneParameters.push_back(sin(angleOfMotion));
-		backPlaneParameters.push_back(-cos(angleOfMotion));
+		backPlaneParameters.push_back(sin(blob.getAngleOfMotion()));
+		backPlaneParameters.push_back(-cos(blob.getAngleOfMotion()));
 		backPlaneParameters.push_back(0);
-		backPlaneParameters.push_back((length / 2) - cuboid.getCentroid().x * sin(angleOfMotion) + cuboid.getCentroid().y * cos(angleOfMotion));
+		backPlaneParameters.push_back((param_length / 2) - cuboid.getCentroid().x * sin(blob.getAngleOfMotion()) + cuboid.getCentroid().y * cos(blob.getAngleOfMotion()));
 
 		planeParameters.push_back(backPlaneParameters);
 
 		vector<float> leftPlaneParameters;
-		leftPlaneParameters.push_back(-cos(angleOfMotion));
-		leftPlaneParameters.push_back(-sin(angleOfMotion));
+		leftPlaneParameters.push_back(-cos(blob.getAngleOfMotion()));
+		leftPlaneParameters.push_back(-sin(blob.getAngleOfMotion()));
 		leftPlaneParameters.push_back(0);
-		leftPlaneParameters.push_back((width / 2) + cuboid.getCentroid().x * cos(angleOfMotion) + cuboid.getCentroid().y * sin(angleOfMotion));
+		leftPlaneParameters.push_back((param_width / 2) + cuboid.getCentroid().x * cos(blob.getAngleOfMotion()) + cuboid.getCentroid().y * sin(blob.getAngleOfMotion()));
 
 		planeParameters.push_back(leftPlaneParameters);
 
@@ -69,7 +70,7 @@ struct LMFunctor
 		topPlaneParameters.push_back(0);
 		topPlaneParameters.push_back(0);
 		topPlaneParameters.push_back(-1);
-		topPlaneParameters.push_back(cuboid.getCentroid().z + (height / 2));
+		topPlaneParameters.push_back(cuboid.getCentroid().z + (param_height / 2));
 
 		planeParameters.push_back(topPlaneParameters);
 
@@ -77,58 +78,75 @@ struct LMFunctor
 		bottomPlaneParameters.push_back(0);
 		bottomPlaneParameters.push_back(0);
 		bottomPlaneParameters.push_back(1);
-		bottomPlaneParameters.push_back(-(cuboid.getCentroid().z) + (height / 2));
+		bottomPlaneParameters.push_back(-(cuboid.getCentroid().z) + (param_height / 2));
 
 		planeParameters.push_back(bottomPlaneParameters);
 
 		vector<vector<Point3f> > planeVertices = cuboid.getPlaneVertices();
 
-		for (int i = 0; i < values(); i++) 
+		//cout << "Plane Parameters size: " << planeParameters.size() << endl;
+
+		for (int i = 0; i < planeParameters.size(); i++)
 		{
-			Point2f flowTail = observedFlows(i, 0);
-			Point2f flowHead = observedFlows(i, 1);
+			//cout << "Looping through all the planes" << endl;
 
-			Point3f groundPlaneFlowTail = findWorldPoint(flowTail, 0, cameraMatrix, rotationMatrix, translationVector);
-
-			Point3f groundPlaneFlowHead = findWorldPoint(flowHead, 0, cameraMatrix, rotationMatrix, translationVector);
-
-			for (int i = 0; i < planeParameters.size(); i++)
+			for (int j = 0; j < values(); j++) 
 			{
+				//cout << "Looping through all the optical flow values" << endl;
 
-					float t1 = (-(planeParameters[i][0] * cameraCenter.x + planeParameters[i][1] * cameraCenter.y + planeParameters[i][2] * cameraCenter.z + planeParameters[i][3])) / planeParameters[i][0] * (groundPlaneFlowTail.x - cameraCenter.x) + planeParameters[i][1] * (groundPlaneFlowTail.y - cameraCenter.y) + planeParameters[i][2] * (-cameraCenter.z);
+				Point2f flowTail = observedFlows(j, 0);
+				Point2f flowHead = observedFlows(j, 1);
 
-					Point3f point1 = Point3f(cameraCenter.x + (groundPlaneFlowTail.x - cameraCenter.x) * t1, cameraCenter.y + (groundPlaneFlowTail.y - cameraCenter.y) * t1, cameraCenter.z - cameraCenter.z * t1);
 
-					float t2 = (-(planeParameters[i][0] * cameraCenter.x + planeParameters[i][1] * cameraCenter.y + planeParameters[i][2] * cameraCenter.z + planeParameters[i][3])) / planeParameters[i][0] * (groundPlaneFlowHead.x - cameraCenter.x) + planeParameters[i][1] * (groundPlaneFlowHead.y - cameraCenter.y) + planeParameters[i][2] * (-cameraCenter.z);
+				Point3f groundPlaneFlowTail = findWorldPoint(flowTail, 0, cameraMatrix, rotationMatrix, translationVector);
 
-					Point3f point2 = Point3f(cameraCenter.x + (groundPlaneFlowHead.x - cameraCenter.x) * t2, cameraCenter.y + (groundPlaneFlowHead.y - cameraCenter.y) * t2, cameraCenter.z - cameraCenter.z * t2);
+				Point3f groundPlaneFlowHead = findWorldPoint(flowHead, 0, cameraMatrix, rotationMatrix, translationVector);
 
-					bool inside = pointInside(planeVertices[i], point1);
+				Point3f groundPlanePredictedFlowHead = Point3f(groundPlaneFlowHead.x + param_motionX, groundPlaneFlowHead.y + param_motionY, 0);
 
-					if (inside)
-					{
+				float t1 = (-(planeParameters[i][0] * cameraCenter.x + planeParameters[i][1] * cameraCenter.y + planeParameters[i][2] * cameraCenter.z + planeParameters[i][3])) / planeParameters[i][0] * (groundPlaneFlowHead.x - cameraCenter.x) + planeParameters[i][1] * (groundPlaneFlowHead.y - cameraCenter.y) + planeParameters[i][2] * (-cameraCenter.z);
 
-						Point3f point3 = Point3f(point1.x + blob.getAverageFlowDistanceX(), point1.y + blob.getAverageFlowDistanceY(), point1.z);
+				Point3f point1 = Point3f(cameraCenter.x + (groundPlaneFlowHead.x - cameraCenter.x) * t1, cameraCenter.y + (groundPlaneFlowHead.y - cameraCenter.y) * t1, cameraCenter.z - cameraCenter.z * t1);
 
+				float t2 = (-(planeParameters[i][0] * cameraCenter.x + planeParameters[i][1] * cameraCenter.y + planeParameters[i][2] * cameraCenter.z + planeParameters[i][3])) / planeParameters[i][0] * (groundPlanePredictedFlowHead.x - cameraCenter.x) + planeParameters[i][1] * (groundPlanePredictedFlowHead.y - cameraCenter.y) + planeParameters[i][2] * (-cameraCenter.z);
+
+				Point3f point2 = Point3f(cameraCenter.x + (groundPlanePredictedFlowHead.x - cameraCenter.x) * t2, cameraCenter.y + (groundPlanePredictedFlowHead.y - cameraCenter.y) * t2, cameraCenter.z - cameraCenter.z * t2);
+
+				bool inside = pointInside(planeVertices[i], point1);
+
+				if (inside)
+				{
+						//cout << "Point " << point1 << " is inside the vertices " << planeVertices[i] << endl;
+						/*
+						cout << "Observed Optical Flow Tail: " << flowTail << endl;
+						cout << "Observed Optical Flow Head: " << flowHead << endl;
+						cout << "Observed Ground Plane Optical Flow Tail: " << groundPlaneFlowTail << endl;
+						cout << "Observed Ground Plane Optical Flow Head: " << groundPlaneFlowHead << endl;
+						cout << "Predicted Ground Plane Optical Flow Head: " << groundPlanePredictedFlowHead << endl;
+						cout << "Observed ground plane flow head projected on cuboid: " << point1 << endl;
+						cout << "Predicted ground plane flow head projected on cuboid: " << point2 << endl;*/
 						vector<Point3f> objectPoints; vector<Point2f> imagePoints;
-						objectPoints.push_back(point3);
+						objectPoints.push_back(point1);
+						objectPoints.push_back(point2);
 						projectPoints(objectPoints, rotationVector, translationVector, cameraMatrix, distCoeffs, imagePoints);
-						fvec(i) = sqrt(pow((flowHead.x - imagePoints[0].x), 2) + pow((flowHead.y - imagePoints[0].y), 2));
+						/*cout << "Observed ground plane flow head projected on cuboid then projected on plane:" << imagePoints[0] << endl;*/
+						/*cout << "Observed ground plane flow head projected on cuboid then projected on plane:" << imagePoints[1] << endl;*/
+						fvec(i) = sqrt(pow((imagePoints[0].x - imagePoints[1].x), 2) + pow((imagePoints[0].y - imagePoints[1].y), 2));
 
-					}
+						//cout << "Error: " << fvec(i) << endl;
+
+						/*cout << "Observed Flow Head: " << imagePoints[0] << endl;
+						cout << "Predicted Flow Head: " << imagePoints[1] << endl;*/
+						/*cout << "Error: " << fvec(i) << endl;
+						cout << endl;*/
 				}
+			}
 		}
 		return 0;
 	}
 
-	// Compute the jacobian of the errors
 	int df(const VectorXf &x, MatrixXf &fjac) const
 	{
-		// 'x' has dimensions n x 1
-		// It contains the current estimates for the parameters.
-
-		// 'fjac' has dimensions m x n
-		// It will contain the jacobian of the errors, calculated numerically in this case.
 
 		float epsilon;
 		epsilon = 1e-5f;
@@ -137,34 +155,39 @@ struct LMFunctor
 		{
 			VectorXf xPlus(x);
 			xPlus(i) += epsilon;
+			//cout << "xPlus: " << xPlus << endl << endl;
+
 			VectorXf xMinus(x);
 			xMinus(i) -= epsilon;
+			//cout << "xMinus: " << xMinus << endl << endl;
 
 			VectorXf fvecPlus(values());
 			operator()(xPlus, fvecPlus);
+			//cout << "fvecPlus: " << fvecPlus << endl << endl;
 
 			VectorXf fvecMinus(values());
 			operator()(xMinus, fvecMinus);
+			//cout << "fvecMinus: " << fvecMinus << endl << endl;
 
 			VectorXf fvecDiff(values());
 			fvecDiff = (fvecPlus - fvecMinus) / (2.0f * epsilon);
+			//cout << "fvecDiff: " << fvecDiff << endl << endl;
+
+			//cout << "2.0f*epsilon" << (2.0f * epsilon) << endl;
 
 			fjac.block(0, i, values(), 1) = fvecDiff;
+			//cout << "fjac: " << fjac << endl << endl;
 		}
 
 		return 0;
 	}
 
-	// Number of data points, i.e. values.
 	int m;
 
-	// Returns 'm', the number of values.
 	int values() const { return m; }
 
-	// The number of parameters, i.e. inputs.
 	int n;
 
-	// Returns 'n', the number of inputs.
 	int inputs() const { return n; }
 
 };
@@ -173,35 +196,37 @@ struct LMFunctor
 
 Track::Track(const Blob &blob)
 {
-	beingTracked_ = true;
-	trackUpdated_ = false;
+	beingTracked_ = true; 
+	trackUpdated_ = false; 
 	trackColor_ = Scalar(rand() % 256, rand() % 256, rand() % 256);
+	initialMotionX_ = blob.getAverageFlowDistanceX();
+	initialMotionY_ = blob.getAverageFlowDistanceY();
 
-	blobs_.push_back(blob);
+	blobs_.push_back(blob); 
 
-	vector<Point2f> flowTails = blob.getFlowTails();
-	vector<Point2f> flowHeads = blob.getFlowHeads();
 
-	int m = flowTails.size();
+	int m = blob.getFlowTails().size();
 	MatrixPoint2f observedFlows(m, 2);
 
 	for (int i = 0; i < m; i++)
 	{
-		observedFlows(i, 0) = flowTails[i];
-		observedFlows(i, 1) = flowHeads[i];
+		observedFlows(i, 0) = blob.getFlowTails()[i];
+		observedFlows(i, 1) = blob.getFlowHeads()[i];
 	}
 
 
-	int n = 4;
+	int n = 6;
 	VectorXf parameters(n);
-	parameters(0) = 5;
-	parameters(1) = 2;
-	parameters(2) = 1.5;
+	parameters(0) = initialCuboidLength_;
+	parameters(1) = initialCuboidWidth_;
+	parameters(2) = initialCuboidHeight_;
 	parameters(3) = blob.getAngleOfMotion();
+	parameters(4) = initialMotionX_;
+	parameters(5) = initialMotionY_;
 
-	Point3f point = findWorldPoint(blob.getBottomLeftCorner(), 0.0, cameraMatrix, rotationMatrix, translationVector);
+	Point3f point1 = findWorldPoint(blob.getBottomLeftCorner(), 0.0, cameraMatrix, rotationMatrix, translationVector); 
 
-	Cuboid cuboid1(point, parameters(0), parameters(1), parameters(2), parameters(3));
+	Cuboid cuboid1(point1, parameters(0), parameters(1), parameters(2), parameters(3)); 
 
 	LMFunctor functor;
 	functor.blob = blob;
@@ -211,26 +236,34 @@ Track::Track(const Blob &blob)
 	functor.n = n;
 
 
-	LevenbergMarquardt<LMFunctor, float> lm(functor);
+	LevenbergMarquardt<LMFunctor, float> lm(functor); 
 	int status = lm.minimize(parameters);
-	cout << "LM optimization status: " << status << endl;
+	//cout << "LM optimization status: " << status << endl;
 
 	//
 	// Results
 	// The 'x' vector also contains the results of the optimization.
 	//
 	cout << "Optimization results" << endl;
-	cout << "\tOptimizex Cuboid Length: " << parameters(0) << endl;
-	cout << "\tOptimized Cuboid Width: " << parameters(1) << endl;
-	cout << "\tOptimized Cuboid Height: " << parameters(2) << endl;
-	cout << "\tOptimized Cuboid Angle Of Motion: " << parameters(3) << endl;
+	cout << "\t Optimizex Cuboid Length: " << parameters(0) << endl;
+	cout << "\t Optimized Cuboid Width: " << parameters(1) << endl;
+	cout << "\t Optimized Cuboid Height: " << parameters(2) << endl;
+	cout << "\t Optimized Angle Of Motion: " << parameters(3) << endl;
+	cout << "\t Optimized Motion in X-axis: " << parameters(3) << endl;
+	cout << "\t Optimized Motion in Y-axis: " << parameters(4) << endl;
 
-	cuboidLength = parameters(0);
-	cuboidWidth = parameters(1);
-	cuboidHeight = parameters(2);
-	cuboidAngleOfMotion = parameters(3);
+	cuboidLength_ = (parameters(0) > 0 && parameters(0) < initialCuboidLength_* 2) ? parameters(0) : initialCuboidLength_;
 
-	Cuboid cuboid2(point, cuboidLength, cuboidWidth, cuboidHeight, cuboidAngleOfMotion);
+	cuboidWidth_ = (parameters(1) > 0 && parameters(1) < initialCuboidWidth_ * 2) ? parameters(1) : initialCuboidWidth_;
+
+	cuboidHeight_ = (parameters(2) > 0 && parameters(2) < initialCuboidHeight_ * 2) ? parameters(2) : initialCuboidHeight_;
+	angleOfMotion_ = parameters(3);
+	motionX_ = (parameters(4) > 0 && parameters(4) < initialMotionX_ * 2) ? parameters(4) : initialMotionX_;
+	motionY_ = (parameters(5) > 0 && parameters(5) < initialMotionY_ * 2) ? parameters(5) : initialMotionX_;
+
+	Point3f point2 = findWorldPoint(Point2f(blobs_.back().getBottomLeftCorner().x + motionX_, blobs_.back().getBottomLeftCorner().y + motionY_), 0, cameraMatrix, rotationMatrix, translationVector);
+
+	Cuboid cuboid2(point2, cuboidLength_, cuboidWidth_, cuboidHeight_, angleOfMotion_);
 	cuboids_.push_back(cuboid2);
 
 
@@ -239,9 +272,7 @@ Track::Track(const Blob &blob)
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void Track::add(const Blob &blob)
-{
-	blobs_.push_back(blob);
-
+{	
 	blobs_.push_back(blob);
 
 	vector<Point2f> flowTails = blob.getFlowTails();
@@ -257,16 +288,20 @@ void Track::add(const Blob &blob)
 	}
 
 
-	int n = 4;
+	int n = 6;
 	VectorXf parameters(n);
-	parameters(0) = cuboidLength;
-	parameters(1) = cuboidWidth;
-	parameters(2) = cuboidHeight;
-	parameters(3) = cuboidAngleOfMotion;
+	parameters(0) = cuboidLength_;
+	parameters(1) = cuboidWidth_;
+	parameters(2) = cuboidHeight_;
+	parameters(3) = blob.getAngleOfMotion();
+	parameters(4) = motionX_;
+	parameters(5) = motionY_;
 
-	Point3f point(getPrevCuboid().getB1().x + blob.getAverageFlowDistanceX(), getPrevCuboid().getB1().y + blob.getAverageFlowDistanceY(), 0.0);
+	/*Point3f point(getPrevCuboid().getB1().x + blob.getAverageFlowDistanceX(), getPrevCuboid().getB1().y + blob.getAverageFlowDistanceY(), 0.0);*/
 
-	Cuboid cuboid1(point, parameters(0), parameters(1), parameters(2), parameters(3));
+	Point3f point1 = findWorldPoint(Point2f(blobs_.back().getBottomLeftCorner().x + motionX_, blobs_.back().getBottomLeftCorner().y + motionY_), 0.0, cameraMatrix, rotationMatrix, translationVector);
+
+	Cuboid cuboid1(point1, parameters(0), parameters(1), parameters(2), parameters(3));
 	
 	LMFunctor functor;
 	functor.blob = blob;
@@ -278,24 +313,31 @@ void Track::add(const Blob &blob)
 
 	LevenbergMarquardt<LMFunctor, float> lm(functor);
 	int status = lm.minimize(parameters);
-	cout << "LM optimization status: " << status << endl;
+	//cout << "LM optimization status: " << status << endl;
 
 	//
 	// Results
 	// The 'x' vector also contains the results of the optimization.
 	//
 	cout << "Optimization results" << endl;
-	cout << "\tOptimizex Cuboid Length: " << parameters(0) << endl;
-	cout << "\tOptimized Cuboid Width: " << parameters(1) << endl;
-	cout << "\tOptimized Cuboid Height: " << parameters(2) << endl;
-	cout << "\tOptimized Cuboid Angle Of Motion: " << parameters(3) << endl;
+	cout << "\t Initial Cuboid Lenght: " << initialCuboidLength_ << " Optimized Cuboid Length: " << parameters(0) << endl;
+	cout << "\t Initial Cuboid Width: " << initialCuboidWidth_ << "  Optimized Cuboid Width: " << parameters(1) << endl;
+	cout << "\t Initial Cuboid Height: " << initialCuboidHeight_ << " Optimized Cuboid Height: " << parameters(2) << endl;
+	cout << "\t Initial Angle Of Motion: " << blob.getAngleOfMotion() << " Optimized Angle Of Motion: " << parameters(3) << endl;
 
-	cuboidLength = parameters(0);
-	cuboidWidth = parameters(1);
-	cuboidHeight = parameters(2);
-	cuboidAngleOfMotion = parameters(3);
+	cout << "\t Initial Motion in X-axis: " << initialMotionX_ << " Optimized Motion in X-axis: " << parameters(4) << endl;
+	cout << "\t Initial Motion in Y-axis: " << initialMotionY_ << " Optimized Motion in Y-axis: " << parameters(5) << endl;
 
-	Cuboid cuboid2(point, cuboidLength, cuboidWidth, cuboidHeight, cuboidAngleOfMotion);
+	cuboidLength_ = (parameters(0) > 0 && parameters(0) < 5 * 2) ? parameters(0) : 5;
+	cuboidWidth_ = (parameters(1) > 0 && parameters(1) < 2 * 2) ? parameters(1) : 2;
+	cuboidHeight_ = (parameters(2) > 0 && parameters(2) < 1.5 * 2) ? parameters(2) : 1.5;
+	angleOfMotion_ = parameters(3);
+	motionX_ = (parameters(4) > 0 && parameters(4) < initialMotionX_ * 2) ? parameters(4) : motionX_;
+	motionY_ = (parameters(5) > 0 && parameters(5) < initialMotionY_ * 2) ? parameters(5) : motionY_;
+
+	Point3f point2 = findWorldPoint(Point2f(blobs_.back().getBottomLeftCorner().x + motionX_, blobs_.back().getBottomLeftCorner().y + motionY_), 0.0, cameraMatrix, rotationMatrix, translationVector);
+	
+	Cuboid cuboid2(point2, cuboidLength_, cuboidWidth_, cuboidHeight_, angleOfMotion_);
 	cuboids_.push_back(cuboid2);
 
 	
@@ -500,6 +542,6 @@ static vector<vector<float> > calculateErrors2(Cuboid cuboid, Blob blob, Point3f
 		vovErrors.push_back(vErrors);
 	}
 	cuboid.setMeasuredOpticalFlowHeads(vovMeasuredOpticalFlowHeads);
-	cout << cuboid.getMeasuredOpticalFlowHeads()[0] << endl;
+	//cout << cuboid.getMeasuredOpticalFlowHeads()[0] << endl;
 	return vovErrors;
 }

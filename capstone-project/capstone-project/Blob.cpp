@@ -6,6 +6,7 @@
 
 using namespace cv;
 using namespace std;
+void eliminateOutliers(vector<Point2f> flowTails, vector<Point2f> flowHeads);
 
 Blob::Blob(const vector<Point> &contour)
 {
@@ -32,17 +33,20 @@ Blob::Blob(const vector<Point> &contour)
 	contours.push_back(contour_);
 	drawContours(mask, contours, -1, WHITE, -1, CV_AA);
 	
-	vector<Point2f> flowTails;
+	vector<Point2f> flowTails, flowHeads;
 	goodFeaturesToTrack(currentFrame_gray, flowTails, 100, 0.01, 5, mask);
 	cornerSubPix(currentFrame_gray, flowTails, Size(10, 10), Size(-1, -1), TermCriteria(TermCriteria::MAX_ITER | TermCriteria::EPS, 20, 0.03));
-	
-	flowTails_ = flowTails;
-	
+
 	int win_size = 10;
 	vector<uchar> status;
 	vector<float> error;
 	
-	calcOpticalFlowPyrLK(currentFrame_gray, nextFrame_gray, flowTails_, flowHeads_, status, error, Size(win_size * 2 + 1, win_size * 2 + 1), 5, TermCriteria(TermCriteria::MAX_ITER | TermCriteria::EPS, 20, 0.3));
+	calcOpticalFlowPyrLK(currentFrame_gray, nextFrame_gray, flowTails, flowHeads, status, error, Size(win_size * 2 + 1, win_size * 2 + 1), 5, TermCriteria(TermCriteria::MAX_ITER | TermCriteria::EPS, 20, 0.3));
+
+	eliminateOutliers(flowTails, flowHeads);
+	
+	flowTails_ = flowTails;
+	flowHeads_ = flowHeads;
 
 	for (int i = 0; i < flowTails_.size(); i++)
 	{
@@ -107,4 +111,44 @@ void Blob::drawBlobInfo(Mat &outputFrame, Scalar backgroundColor, int fontFace, 
 	putText(outputFrame, "Width: " + to_string((int)getWidth()), Point(getBottomLeftCorner().x + 5, getBottomLeftCorner().y + 25), fontFace, getWidth() / 350, fontColor, fontThickness, CV_AA);
 
 	putText(outputFrame, "Height: " + to_string((int)getHeight()), Point(getBottomLeftCorner().x + 5, getBottomLeftCorner().y + 35), fontFace, getWidth() / 350, fontColor, fontThickness, CV_AA);
+}
+
+
+void eliminateOutliers(vector<Point2f> flowTails, vector<Point2f> flowHeads)
+{
+	vector<float> v_flowLengths;
+	int m = flowTails.size();
+
+	for (int i = 0; i < m; i++)
+	{
+		float flowLength = sqrt(pow(flowTails[i].x, 2) + pow(flowTails[i].y, 2));
+		v_flowLengths.push_back(flowLength);
+	}
+
+	sort(v_flowLengths.begin(), v_flowLengths.end());
+
+	float medianFlowLength;
+	if (m % 2 == 0)
+	{
+		medianFlowLength = (v_flowLengths[(m / 2) - 1] + v_flowLengths[m / 2]) / 2;
+	}
+	else
+	{
+		medianFlowLength = v_flowLengths[(m + 1) / 2];
+	}
+
+	vector<int> indexes;
+	for (int i = 0; i < m; i++)
+	{
+		float diff = abs(medianFlowLength - v_flowLengths[i]);
+		if (diff > 0.3 * v_flowLengths[i])
+		{
+			indexes.push_back(i);
+		}
+	}
+	for (int i = 0; i < indexes.size(); i++)
+	{
+		flowTails.erase(flowTails.begin() + (indexes[i] - i));
+		flowHeads.erase(flowHeads.begin() + (indexes[i] - i));
+	}
 }
