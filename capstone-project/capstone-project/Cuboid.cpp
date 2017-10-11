@@ -92,7 +92,7 @@ Cuboid::Cuboid(Point3f &point, float initialLength, float intialWidth, float hei
 
 	centroid_ = Point3f((b1_.x + b2_.x) / 2, (b1_.y + b3_.y) / 2, height / 2);
 
-	projectPoints(vertices_, rotationVector, translationVector, cameraMatrix, distCoeffs, imagePlaneProjectedVertices_);
+	
 
 	vector<Point3f> objectPoints;
 
@@ -104,70 +104,15 @@ Cuboid::Cuboid(Point3f &point, float initialLength, float intialWidth, float hei
 
 	projectedCentroid_ = imagePoints[0];
 
-	vector<float> frontPlaneParameters;
-	frontPlaneParameters.push_back(-cos(angleOfMotion_));
-	frontPlaneParameters.push_back(sin(angleOfMotion_));
-	frontPlaneParameters.push_back(0);
-	frontPlaneParameters.push_back((length_ / 2) + centroid_.x * cos(angleOfMotion_) - centroid_.y * sin(angleOfMotion_));
-
-	planeParameters_.push_back(frontPlaneParameters);
-
-	vector<float> rightPlaneParameters;
-	rightPlaneParameters.push_back(cos(angleOfMotion_));
-	rightPlaneParameters.push_back(sin(angleOfMotion_));
-	rightPlaneParameters.push_back(0);
-	rightPlaneParameters.push_back((width_) / 2 - centroid_.x * cos(angleOfMotion_) - centroid_.y * sin(angleOfMotion_));
-
-	planeParameters_.push_back(rightPlaneParameters);
-
-	vector<float> backPlaneParameters;
-	backPlaneParameters.push_back(sin(angleOfMotion_));
-	backPlaneParameters.push_back(-cos(angleOfMotion_));
-	backPlaneParameters.push_back(0);
-	backPlaneParameters.push_back((length_ / 2) - centroid_.x * sin(angleOfMotion_) + centroid_.y * cos(angleOfMotion_));
-
-	planeParameters_.push_back(backPlaneParameters);
-
-	vector<float> leftPlaneParameters;
-	leftPlaneParameters.push_back(-cos(angleOfMotion_));
-	leftPlaneParameters.push_back(-sin(angleOfMotion_));
-	leftPlaneParameters.push_back(0);
-	leftPlaneParameters.push_back((width_ / 2) + centroid_.x * cos(angleOfMotion_) + centroid_.y * sin(angleOfMotion_));
-
-	planeParameters_.push_back(leftPlaneParameters);
-
-	vector<float> topPlaneParameters;
-	topPlaneParameters.push_back(0);
-	topPlaneParameters.push_back(0);
-	topPlaneParameters.push_back(-1);
-	topPlaneParameters.push_back(centroid_.z + (height_ / 2));
-
-	planeParameters_.push_back(topPlaneParameters);
-
-	vector<float> bottomPlaneParameters;
-	bottomPlaneParameters.push_back(0);
-	bottomPlaneParameters.push_back(0);
-	bottomPlaneParameters.push_back(1);
-	bottomPlaneParameters.push_back(-(centroid_.z) + (height_ / 2));
-
-	planeParameters_.push_back(bottomPlaneParameters);
-
 }
 Cuboid::Cuboid() {};
 Cuboid::~Cuboid() {};
 
 void Cuboid::drawCuboid(Mat &outputFrame, Scalar color, int lineThickness)
 {
-	bool inFrame = true;
+	projectPoints(vertices_, rotationVector, translationVector, cameraMatrix, distCoeffs, imagePlaneProjectedVertices_);
 
-	for (int i = 0; i < imagePlaneProjectedVertices_.size(); i++)
-	{
-		if (imagePlaneProjectedVertices_[i].x > outputFrame.cols || imagePlaneProjectedVertices_[i].y > outputFrame.rows)
-		{
-			inFrame = false;
-		}
-	}
-	if (inFrame)
+	if (imagePlaneProjectedVertices_[0].x < outputFrame.cols && imagePlaneProjectedVertices_[0].y < outputFrame.rows)
 	{
 		line(outputFrame, imagePlaneProjectedVertices_[0], imagePlaneProjectedVertices_[1], color, lineThickness, CV_AA);
 

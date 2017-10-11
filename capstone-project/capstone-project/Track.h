@@ -10,7 +10,6 @@ private:
 
 	vector<Blob> blobs_;
 	vector<Cuboid> cuboids_;
-	float initialCuboidLength_ = 5, initialCuboidWidth_ = 2, initialCuboidHeight_ = 1.5, initialAngleOfMotion_, initialMotionX_, initialMotionY_;
 	float cuboidLength_, cuboidWidth_, cuboidHeight_, angleOfMotion_, motionX_, motionY_;
 	vector<float> instantaneousSpeeds_;
 	float averageSpeed_;
