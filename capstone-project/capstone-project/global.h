@@ -25,9 +25,9 @@ float distanceBetweenPoints(Point2f point1, Point2f point2);
 float distanceBetweenPoints(Point2f point1, Point point2);
 float distanceBetweenPoints(Point3f point1, Point3f point2);
 
-bool pointInside(vector<Point3f> points, Point3f point);
+bool pointInsideRect(vector<Point3f> points, Point3f point);
 
-
-
-
+float findMedian(vector<float> values);
+void eliminateOutliers(vector<Point3f> groundPlaneFlowTails, vector<Point3f> groundPlaneFlowHeads);
+void eliminateOutliers(vector<Point2f> flowTails, vector<Point2f> flowHeads);
 

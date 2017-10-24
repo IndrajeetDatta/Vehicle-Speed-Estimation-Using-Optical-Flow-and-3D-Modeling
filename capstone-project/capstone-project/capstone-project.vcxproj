@@ -29,6 +29,7 @@
     <ClInclude Include="Blob.h" />
     <ClInclude Include="Cuboid.h" />
     <ClInclude Include="global.h" />
+    <ClInclude Include="LMFunctor.h" />
     <ClInclude Include="Track.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

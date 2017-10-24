@@ -68,34 +68,199 @@ float distanceBetweenPoints(Point3f point1, Point3f point2)
 	return(sqrt(pow(x, 2) + pow(y, 2) + pow(z, 2)));
 }
 
-bool pointInside(vector<Point3f> points, Point3f point)
+bool pointInsideRect(vector<Point3f> points, Point3f point)
 {
+
 	Point3f p1, p2, p3, p4, m;
+
 	p1 = points[0];
+	//cout << "Point1: " << p1 << endl;
+
 	p2 = points[1];
+	//cout << "Point2: " << p2 << endl;
+
 	p3 = points[2];
+	//cout << "Point3: " << p3 << endl;
+
 	p4 = points[3];
+	//cout << "Points4: " << p4 << endl;
+
 	m = point;
+	//cout << "m: " << m << endl;
+	//cout << endl;
 
-	Vec3f v1(p2.x - p1.x, p2.y - p1.y, p2.z - p1.z);
-	Vec3f v3(p4.x - p3.x, p4.y - p3.y, p4.z - p3.z);
-	Vec3f v4(m.x - p1.x, m.y - p1.y, m.z - p1.z);
-	Vec3f v5(m.x - p3.x, m.y - p3.y, m.z - p3.z);
-	Vec3f v1_norm(v1[0] / (sqrt(v1[0] * v1[0] + v1[1] * v1[1] + v1[2] * v1[2])), v1[1] / (sqrt(v1[0] * v1[0] + v1[1] * v1[1] + v1[2] * v1[2])), v1[2] / (sqrt(v1[0] * v1[0] + v1[1] * v1[1] + v1[2] * v1[2])));
+	Vec3f v12(p2.x - p1.x, p2.y - p1.y, p2.z - p1.z);
+	//cout << "v12: " << v12 << endl;
 
-	Vec3f v3_norm(v3[0] / (sqrt(v3[0] * v3[0] + v3[1] * v3[1] + v3[2] * v3[2])), v3[1] / (sqrt(v3[0] * v3[0] + v3[1] * v3[1] + v3[2] * v3[2])), v3[2] / (sqrt(v3[0] * v3[0] + v3[1] * v3[1] + v3[2] * v3[2])));
+	Vec3f v23(p3.x - p2.x, p3.y - p2.y, p3.z - p2.z);
+	//cout << "v23: " << v23 << endl;
 
-	Vec3f v4_norm(v4[0] / (sqrt(v4[0] * v4[0] + v4[1] * v4[1] + v4[2] * v4[2])), v4[1] / (sqrt(v4[0] * v4[0] + v4[1] * v4[1] + v4[2] * v4[2])), v4[2] / (sqrt(v4[0] * v4[0] + v4[1] * v4[1] + v4[2] * v4[2])));
+	Vec3f v34(p4.x - p3.x, p4.y - p3.y, p4.z - p3.z);
+	//cout << "v34: " << v34 << endl;
 
-	Vec3f v5_norm(v5[0] / (sqrt(v5[0] * v5[0] + v5[1] * v5[1] + v5[2] * v5[2])), v5[1] / (sqrt(v5[0] * v5[0] + v5[1] * v5[1] + v5[2] * v5[2])), v5[2] / (sqrt(v5[0] * v5[0] + v5[1] * v5[1] + v5[2] * v5[2])));
+	Vec3f v41(p1.x - p4.x, p1.y - p4.y, p1.z - p4.z);
+	//cout << "v41: " << v41 << endl;
 
-	if (v1.dot(v4) >= 0 && v3.dot(v5) >= 0)
+	Vec3f v1m(m.x - p1.x, m.y - p1.y, m.z - p1.z);
+	//cout << "v1m: " << v1m << endl;
+
+	Vec3f v2m(m.x - p2.x, m.y - p2.y, m.z - p2.z);
+	//cout << "v2m: " << v2m << endl;
+
+	Vec3f v3m(m.x - p3.x, m.y - p3.y, m.z - p3.z);
+	//cout << "v3m: " << v3m << endl;
+
+	Vec3f v4m(m.x - p4.x, m.y - p4.y, m.z - p4.z);
+	//cout << "v4m: " << v4m << endl;
+	//cout << endl;
+
+	float v12_length = sqrt(pow(v12[0], 2) + pow(v12[1], 2) + pow(v12[2], 2));
+	//cout << "v12 length: " << v12_length << endl;
+
+	float v23_length = sqrt(pow(v23[0], 2) + pow(v23[1], 2) + pow(v23[2], 2));
+	//cout << "v23 length: " << v23_length << endl;
+
+	float v34_length = sqrt(pow(v34[0], 2) + pow(v34[1], 2) + pow(v34[2], 2));
+	//cout << "v34 length: " << v34_length << endl;
+
+	float v41_length = sqrt(pow(v41[0], 2) + pow(v41[1], 2) + pow(v41[2], 2));
+	//cout << "v1 length: " << v41_length << endl;
+
+	float v1m_length = sqrt(pow(v1m[0], 2) + pow(v1m[1], 2) + pow(v1m[2], 2));
+	//cout << "v1m length: " << v1m_length << endl;
+
+	float v2m_length = sqrt(pow(v2m[0], 2) + pow(v2m[1], 2) + pow(v2m[2], 2));
+	//cout << "v2m length: " << v2m_length << endl;
+
+	float v3m_length = sqrt(pow(v3m[0], 2) + pow(v3m[1], 2) + pow(v3m[2], 2));
+	//cout << "v3m length: " << v3m_length << endl;
+
+	float v4m_length = sqrt(pow(v4m[0], 2) + pow(v4m[1], 2) + pow(v4m[2], 2));
+	////cout << "v4m length: " << v4m_length << endl;
+	//cout << endl;
+	Vec3f v12_norm = v12 / v12_length;
+	//cout << "v12_norm: " << v12_norm << endl;
+
+	Vec3f v23_norm = v23 / v23_length;
+	//cout << "v23_norm: " << v23_norm << endl;
+
+	Vec3f v34_norm = v34 / v34_length;
+	//cout << "v34_norm: " << v34_norm << endl;
+
+	Vec3f v41_norm = v41 / v41_length;
+	//cout << "v41_norm: " << v41_norm << endl;
+
+	Vec3f v1m_norm = v1m / v1m_length;
+	//cout << "v1m_norm: " << v1m_norm << endl;
+
+	Vec3f v2m_norm = v2m / v2m_length;
+	//cout << "v2m_norm: " << v2m_norm << endl;
+
+	Vec3f v3m_norm = v3m / v3m_length;
+	//cout << "v3m_norm: " << v3m_norm << endl;
+
+	Vec3f v4m_norm = v4m / v4m_length;
+	//cout << "v4m_norm: " << v4m_norm << endl;
+	//cout << endl;
+	float dot1 = v12_norm.dot(v1m_norm);
+	//cout << "dot1: " << dot1 << endl;
+
+	float dot2 = v23_norm.dot(v2m_norm);
+	//cout << "dot2: " << dot2 << endl;
+
+	float dot3 = v34_norm.dot(v3m_norm);
+	//cout << "dot3: " << dot3 << endl;
+
+	float dot4 = v41_norm.dot(v4m_norm);
+	//cout << "dot4: " << dot4 << endl;
+
+	if (dot1 >= 0 && dot2 >= 0 && dot3 >= 0 && dot4 >= 0)
 	{
 		return true;
 	}
+
 	else
 	{
 		return false;
 	}
+
+}
+float findMedian(vector<float> values)
+{
+	int m = values.size();
+
+	sort(values.begin(), values.end());
+
+	float medianValue;
+
+	if (m % 2 == 0)
+	{
+		medianValue = (values[(m / 2) - 1] + values[m / 2]) / 2;
+	}
+	else
+	{
+		medianValue = values[(m + 1) / 2];
+	}
+
+	return medianValue;
+}
+void eliminateOutliers(vector<Point2f> flowTails, vector<Point2f> flowHeads)
+{
+	vector<float> v_flowLengths;
+	int m = flowTails.size();
+
+	for (int i = 0; i < m; i++)
+	{
+		float flowLength = sqrt(pow(flowHeads[i].x - flowTails[i].x, 2) + pow(flowHeads[i].y - flowTails[i].y, 2));
+		v_flowLengths.push_back(flowLength);
+	}
+
+	sort(v_flowLengths.begin(), v_flowLengths.end());
+
+	float medianFlowLength = findMedian(v_flowLengths);
+
+	vector<int> indexes;
+	for (int i = 0; i < m; i++)
+	{
+		float diff = abs(medianFlowLength - v_flowLengths[i]);
+		if (diff > 0.3 * v_flowLengths[i])
+		{
+			indexes.push_back(i);
+		}
+	}
+	for (int i = 0; i < indexes.size(); i++)
+	{
+		flowTails.erase(flowTails.begin() + (indexes[i] - i));
+		flowHeads.erase(flowHeads.begin() + (indexes[i] - i));
+	}
 }
 
+void eliminateOutliers(vector<Point3f> groundPlaneFlowTails, vector<Point3f> groundPlaneFlowHeads)
+{
+	vector<float> v_flowLengths;
+	int m = groundPlaneFlowTails.size();
+
+	for (int i = 0; i < m; i++)
+	{
+		float flowLength = sqrt(pow(groundPlaneFlowHeads[i].x - groundPlaneFlowTails[i].x, 2) + pow(groundPlaneFlowHeads[i].y - groundPlaneFlowTails[i].y, 2));
+		v_flowLengths.push_back(flowLength);
+	}
+
+	float medianFlowLength = findMedian(v_flowLengths);
+
+	vector<int> indexes;
+	for (int i = 0; i < m; i++)
+	{
+		float diff = abs(medianFlowLength - v_flowLengths[i]);
+		if (diff > 0.3 * v_flowLengths[i])
+		{
+			indexes.push_back(i);
+		}
+	}
+	for (int i = 0; i < indexes.size(); i++)
+	{
+		groundPlaneFlowTails.erase(groundPlaneFlowTails.begin() + (indexes[i] - i));
+		groundPlaneFlowHeads.erase(groundPlaneFlowHeads.begin() + (indexes[i] - i));
+		v_flowLengths.erase(v_flowLengths.begin() + (indexes[i - i]));
+	}
+}

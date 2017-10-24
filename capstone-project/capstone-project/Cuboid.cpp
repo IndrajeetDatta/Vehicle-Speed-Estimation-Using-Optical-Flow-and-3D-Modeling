@@ -7,144 +7,202 @@
 using namespace std;
 using namespace cv;
 
-Cuboid::Cuboid(Point3f &point, float initialLength, float intialWidth, float height, float angleOfMotion)
+Cuboid::Cuboid(Point3f point, float length, float width, float height, float angleOfMotion)
 {
-	length_ = initialLength;
-	
-	width_ = intialWidth;
-	
-	height_ = height;
-	
-	angleOfMotion_ = angleOfMotion;
+	this->length = length;
 
-	b1_ = Point3f(point.x, point.y, 0.0);
+	this->width = width;
 
-	b2_ = Point3f(point.x + (width_ * cos(angleOfMotion_)), point.y - (width_ * sin(angleOfMotion_)), 0.0);
+	this->height = height;
 
-	b3_ = Point3f(point.x + (length_ * sin(angleOfMotion_)), point.y + (length_ * cos(angleOfMotion_)), 0.0);
+	this->angleOfMotion = angleOfMotion;
 
-	b4_ = Point3f(point.x + (length_ * sin(angleOfMotion_)) + (width_ * cos(angleOfMotion_)), point.y + (length_ * cos(angleOfMotion_)) + (width_ * sin(angleOfMotion_)), 0.0);
+	this->b1 = Point3f((point.x - (width / 2)) * cos(angleOfMotion) - (point.y - (length / 2)) * sin(angleOfMotion), (point.x - (width / 2)) * sin(angleOfMotion) + (point.y - (length / 2)) * cos(angleOfMotion), 0.0);
 
-	t1_ = Point3f(point.x, point.y, height_);
+	this->b2 = Point3f((point.x - (width / 2)) * cos(angleOfMotion) - (point.y + (length / 2)) * sin(angleOfMotion), (point.x - (width / 2)) * sin(angleOfMotion) + (point.y + (length / 2)) * cos(angleOfMotion), 0.0);
 
-	t2_ = Point3f(point.x + (width_ * cos(angleOfMotion_)), point.y - (width_* sin(angleOfMotion_)), height_);
+	this->b3 = Point3f((point.x + (width / 2)) * cos(angleOfMotion) - (point.y + (length / 2)) * sin(angleOfMotion), (point.x + (width / 2)) * sin(angleOfMotion) + (point.y + (length / 2)) * cos(angleOfMotion), 0.0);
 
-	t3_ = Point3f(point.x + (length_ * sin(angleOfMotion_)), point.y + (length_ * cos(angleOfMotion_)), height_);
+	this->b4 = Point3f((point.x + (width / 2)) * cos(angleOfMotion) - (point.y - (length / 2)) * sin(angleOfMotion), (point.x + (width / 2)) * sin(angleOfMotion) + (point.y - (length / 2)) * cos(angleOfMotion), 0.0);
 
-	t4_ = Point3f(point.x + (length_ * sin(angleOfMotion_)) + (width_ * cos(angleOfMotion_)), point.y + (length_ * cos(angleOfMotion_)) + (width_ * sin(angleOfMotion_)), height_);
+	this->t1 = Point3f((point.x - (width / 2)) * cos(angleOfMotion) - (point.y - (length / 2)) * sin(angleOfMotion), (point.x - (width / 2)) * sin(angleOfMotion) + (point.y - (length / 2)) * cos(angleOfMotion), height);
 
-	vertices_.push_back(b1_);
-	vertices_.push_back(b2_);
-	vertices_.push_back(b3_);
-	vertices_.push_back(b4_);
-	vertices_.push_back(t1_);
-	vertices_.push_back(t2_);
-	vertices_.push_back(t3_);
-	vertices_.push_back(t4_);
+	this->t2 = Point3f((point.x - (width / 2)) * cos(angleOfMotion) - (point.y + (length / 2)) * sin(angleOfMotion), (point.x - (width / 2)) * sin(angleOfMotion) + (point.y + (length / 2)) * cos(angleOfMotion), height);
 
-	vector<Point3f> frontPlaneVertices;
-	frontPlaneVertices.push_back(b1_);
-	frontPlaneVertices.push_back(t1_);
-	frontPlaneVertices.push_back(t2_);
-	frontPlaneVertices.push_back(b2_);
+	this->t3 = Point3f((point.x + (width / 2)) * cos(angleOfMotion) - (point.y + (length / 2)) * sin(angleOfMotion), (point.x + (width / 2)) * sin(angleOfMotion) + (point.y + (length / 2)) * cos(angleOfMotion), height);
 
-	planeVertices_.push_back(frontPlaneVertices);
+	this->t4 = Point3f((point.x + (width / 2)) * cos(angleOfMotion) - (point.y - (length / 2)) * sin(angleOfMotion), (point.x + (width / 2)) * sin(angleOfMotion) + (point.y - (length / 2)) * cos(angleOfMotion), height);
 
-	vector<Point3f> rightPlaneVertices;
-	rightPlaneVertices.push_back(b3_);
-	rightPlaneVertices.push_back(t3_);
-	rightPlaneVertices.push_back(t1_);
-	rightPlaneVertices.push_back(b1_);
+	this->centroid = Point3f(point.x, point.y, point.z + (height / 2));
 
-	planeVertices_.push_back(rightPlaneVertices);
+	this->v_vertices.push_back(b1);
+	this->v_vertices.push_back(b2);
+	this->v_vertices.push_back(b3);
+	this->v_vertices.push_back(b4);
+	this->v_vertices.push_back(t1);
+	this->v_vertices.push_back(t2);
+	this->v_vertices.push_back(t3);
+	this->v_vertices.push_back(t4);
 
-	vector<Point3f> backPlaneVertices;
-	backPlaneVertices.push_back(b4_);
-	backPlaneVertices.push_back(t4_);
-	backPlaneVertices.push_back(t3_);
-	backPlaneVertices.push_back(b3_);
+	projectPoints(this->v_vertices, rotationVector, translationVector, cameraMatrix, distCoeffs, this->v_ipVertices);
 
-	planeVertices_.push_back(backPlaneVertices);
 
-	vector<Point3f> leftPlaneVertices;
-	leftPlaneVertices.push_back(b2_);
-	leftPlaneVertices.push_back(t2_);
-	leftPlaneVertices.push_back(t4_);
-	leftPlaneVertices.push_back(b4_);
 
-	planeVertices_.push_back(leftPlaneVertices);
+	vector<Point2f> v_convexHull(v_ipVertices.size());
+	convexHull(v_ipVertices, v_convexHull);
+	this->v_convexHull = v_convexHull;
+
 
 	vector<Point3f> topPlaneVertices;
-	topPlaneVertices.push_back(t1_);
-	topPlaneVertices.push_back(t3_);
-	topPlaneVertices.push_back(t4_);
-	topPlaneVertices.push_back(t2_);
+	topPlaneVertices.push_back(t4);
+	topPlaneVertices.push_back(t1);
+	topPlaneVertices.push_back(t2);
+	topPlaneVertices.push_back(t3);
 
-	planeVertices_.push_back(topPlaneVertices);
+	this->v_planeVertices.push_back(topPlaneVertices);
+
+	vector<Point3f> frontPlaneVertices;
+	frontPlaneVertices.push_back(b4);
+	frontPlaneVertices.push_back(b1);
+	frontPlaneVertices.push_back(t1);
+	frontPlaneVertices.push_back(t4);
+
+	this->v_planeVertices.push_back(frontPlaneVertices);
+
+	vector<Point3f> leftPlaneVertices;
+	leftPlaneVertices.push_back(b3);
+	leftPlaneVertices.push_back(b4);
+	leftPlaneVertices.push_back(t4);
+	leftPlaneVertices.push_back(t3);
+
+	this->v_planeVertices.push_back(leftPlaneVertices);
+
+	vector<Point3f> rightPlaneVertices;
+	rightPlaneVertices.push_back(b2);
+	rightPlaneVertices.push_back(b1);
+	rightPlaneVertices.push_back(t1);
+	rightPlaneVertices.push_back(t2);
+
+	this->v_planeVertices.push_back(rightPlaneVertices);
 
 	vector<Point3f> bottomPlaneVertices;
-	bottomPlaneVertices.push_back(b1_);
-	bottomPlaneVertices.push_back(b3_);
-	bottomPlaneVertices.push_back(b4_);
-	bottomPlaneVertices.push_back(b2_);
+	bottomPlaneVertices.push_back(b4);
+	bottomPlaneVertices.push_back(b1);
+	bottomPlaneVertices.push_back(b2);
+	bottomPlaneVertices.push_back(b3);
 
-	planeVertices_.push_back(bottomPlaneVertices);
+	this->v_planeVertices.push_back(bottomPlaneVertices);
 
-	centroid_ = Point3f((b1_.x + b2_.x) / 2, (b1_.y + b3_.y) / 2, height / 2);
+	vector<Point3f> backPlaneVertices;
+	backPlaneVertices.push_back(b3);
+	backPlaneVertices.push_back(b2);
+	backPlaneVertices.push_back(t2);
+	backPlaneVertices.push_back(t3);
 
-	
+	this->v_planeVertices.push_back(backPlaneVertices);
 
-	vector<Point3f> objectPoints;
+	vector<float> topPlaneParameters;
+	topPlaneParameters.push_back(0);
+	topPlaneParameters.push_back(0);
+	topPlaneParameters.push_back(-1);
+	topPlaneParameters.push_back(centroid.z + (height / 2));
 
-	vector<Point2f> imagePoints;
+	this->v_planeParameters.push_back(topPlaneParameters);
 
-	objectPoints.push_back(centroid_);
+	vector<float> frontPlaneParameters;
+	frontPlaneParameters.push_back(-sin(angleOfMotion));
+	frontPlaneParameters.push_back(cos(angleOfMotion));
+	frontPlaneParameters.push_back(0);
+	frontPlaneParameters.push_back((length / 2) + (centroid.x * sin(angleOfMotion)) - (centroid.y * cos(angleOfMotion)));
 
-	projectPoints(objectPoints, rotationVector, translationVector, cameraMatrix, distCoeffs, imagePoints);
+	this->v_planeParameters.push_back(frontPlaneParameters);
 
-	projectedCentroid_ = imagePoints[0];
+	vector<float> leftPlaneParameters;
+	leftPlaneParameters.push_back(-cos(angleOfMotion));
+	leftPlaneParameters.push_back(-sin(angleOfMotion));
+	leftPlaneParameters.push_back(0);
+	leftPlaneParameters.push_back((width / 2) + (centroid.x * cos(angleOfMotion)) + (centroid.y * sin(angleOfMotion)));
 
+	this->v_planeParameters.push_back(leftPlaneParameters);
+
+	vector<float> rightPlaneParameters;
+	rightPlaneParameters.push_back(cos(angleOfMotion));
+	rightPlaneParameters.push_back(sin(angleOfMotion));
+	rightPlaneParameters.push_back(0);
+	rightPlaneParameters.push_back((width / 2) - (centroid.x * cos(angleOfMotion)) - (centroid.y * sin(angleOfMotion)));
+
+	this->v_planeParameters.push_back(rightPlaneParameters);
+
+	vector<float> bottomPlaneParameters;
+	bottomPlaneParameters.push_back(0);
+	bottomPlaneParameters.push_back(0);
+	bottomPlaneParameters.push_back(1);
+	bottomPlaneParameters.push_back(-(centroid.z) + (height / 2));
+
+	this->v_planeParameters.push_back(bottomPlaneParameters);
+
+	vector<float> backPlaneParameters;
+	backPlaneParameters.push_back(sin(angleOfMotion));
+	backPlaneParameters.push_back(-cos(angleOfMotion));
+	backPlaneParameters.push_back(0);
+	backPlaneParameters.push_back((length / 2) - (centroid.x * sin(angleOfMotion)) + (centroid.y * cos(angleOfMotion)));
+
+	this->v_planeParameters.push_back(backPlaneParameters);
 }
+
+void Cuboid::findFlowsOnPlanes(vector<Point2f> flowTails, vector<Point2f> flowHeads)
+{
+	for (int i = 0; i < flowTails.size(); i++)
+	{
+		Point3f gp_ft = findWorldPoint(flowTails[i], 0, cameraMatrix, rotationMatrix, translationVector);
+		Point3f gp_fh = findWorldPoint(flowHeads[i], 0, cameraMatrix, rotationMatrix, translationVector);
+
+		float smallestDistance = 10000; Point3f cp_ft, cp_fh;
+		for (int j = 0; j < v_planeParameters.size(); j++)
+		{
+			float t1 = -(this->v_planeParameters[j][0] * cameraCenter.x + this->v_planeParameters[j][1] * cameraCenter.y + this->v_planeParameters[j][2] * cameraCenter.z + this->v_planeParameters[j][3]) / (this->v_planeParameters[j][0] * (gp_ft.x - cameraCenter.x) + this->v_planeParameters[j][1] * (gp_ft.y - cameraCenter.y) + this->v_planeParameters[j][2] * (gp_ft.z - cameraCenter.z));
+
+			Point3f point1(cameraCenter.x + ((gp_ft.x - cameraCenter.x) * t1), cameraCenter.y + ((gp_ft.y - cameraCenter.y) * t1), cameraCenter.z + ((gp_ft.z - cameraCenter.z) * t1));
+			//cout << point1 << endl;
+			float t2 = -(this->v_planeParameters[j][0] * cameraCenter.x + this->v_planeParameters[j][1] * cameraCenter.y + this->v_planeParameters[j][2] * cameraCenter.z + this->v_planeParameters[j][3]) / (this->v_planeParameters[j][0] * (gp_fh.x - cameraCenter.x) + this->v_planeParameters[j][1] * (gp_fh.y - cameraCenter.y) + this->v_planeParameters[j][2] * (gp_fh.z - cameraCenter.z));
+
+			Point3f point2(cameraCenter.x + ((gp_fh.x - cameraCenter.x) * t2), cameraCenter.y + ((gp_fh.y - cameraCenter.y) * t2), cameraCenter.z + ((gp_fh.z - cameraCenter.z) * t2));
+			/*cout << point2 << endl;
+			cout << endl;*/
+			bool inside = pointInsideRect(this->v_planeVertices[j], point1) && pointInsideRect(this->v_planeVertices[j], point2);
+
+			if (inside)
+			{
+				float distance = (distanceBetweenPoints(point1, cameraCenter) + distanceBetweenPoints(point2, cameraCenter)) / 2;
+				if (distance < smallestDistance)
+				{
+
+					cp_ft = point1;
+					cp_fh = point2;
+					smallestDistance = distance;
+				}
+			}
+		}
+
+		vector<Point2f> temp1;
+		temp1.push_back(flowTails[i]);
+		temp1.push_back(flowHeads[i]);
+		this->v_ip_flows.push_back(temp1);
+
+		vector<Point3f> temp2;
+		temp2.push_back(cp_ft);
+		temp2.push_back(cp_fh);
+		this->v_cp_flows.push_back(temp2);
+
+		vector<Point3f> temp3;
+		temp3.push_back(gp_ft);
+		temp3.push_back(gp_fh);
+		this->v_gp_flows.push_back(temp3);
+	}
+}
+
 Cuboid::Cuboid() {};
 Cuboid::~Cuboid() {};
 
-void Cuboid::drawCuboid(Mat &outputFrame, Scalar color, int lineThickness)
-{
-	projectPoints(vertices_, rotationVector, translationVector, cameraMatrix, distCoeffs, imagePlaneProjectedVertices_);
 
-	if (imagePlaneProjectedVertices_[0].x < outputFrame.cols && imagePlaneProjectedVertices_[0].y < outputFrame.rows)
-	{
-		line(outputFrame, imagePlaneProjectedVertices_[0], imagePlaneProjectedVertices_[1], color, lineThickness, CV_AA);
-
-		line(outputFrame, imagePlaneProjectedVertices_[1], imagePlaneProjectedVertices_[3], color, lineThickness, CV_AA);
-
-		line(outputFrame, imagePlaneProjectedVertices_[3], imagePlaneProjectedVertices_[2], color, lineThickness, CV_AA);
-
-		line(outputFrame, imagePlaneProjectedVertices_[2], imagePlaneProjectedVertices_[0], color, lineThickness, CV_AA);
-
-		line(outputFrame, imagePlaneProjectedVertices_[4], imagePlaneProjectedVertices_[5], color, lineThickness, CV_AA);
-
-		line(outputFrame, imagePlaneProjectedVertices_[5], imagePlaneProjectedVertices_[7], color, lineThickness, CV_AA);
-
-		line(outputFrame, imagePlaneProjectedVertices_[7], imagePlaneProjectedVertices_[6], color, lineThickness, CV_AA);
-
-		line(outputFrame, imagePlaneProjectedVertices_[6], imagePlaneProjectedVertices_[4], color, lineThickness, CV_AA);
-
-		line(outputFrame, imagePlaneProjectedVertices_[0], imagePlaneProjectedVertices_[4], color, lineThickness, CV_AA);
-
-		line(outputFrame, imagePlaneProjectedVertices_[1], imagePlaneProjectedVertices_[5], color, lineThickness, CV_AA);
-
-		line(outputFrame, imagePlaneProjectedVertices_[2], imagePlaneProjectedVertices_[6], color, lineThickness, CV_AA);
-
-		line(outputFrame, imagePlaneProjectedVertices_[3], imagePlaneProjectedVertices_[7], color, lineThickness, CV_AA);
-
-		putText(outputFrame, "Length: " + to_string(length_), Point2f(imagePlaneProjectedVertices_[0].x, imagePlaneProjectedVertices_[0].y + 10), CV_FONT_HERSHEY_SIMPLEX, 0.3, WHITE, 1, CV_AA);
-
-		putText(outputFrame, "Width: " + to_string(width_), Point2f(imagePlaneProjectedVertices_[0].x, imagePlaneProjectedVertices_[0].y + 30), CV_FONT_HERSHEY_SIMPLEX, 0.3, WHITE, 1, CV_AA);
-
-		putText(outputFrame, "Height: " + to_string(height_), Point2f(imagePlaneProjectedVertices_[0].x, imagePlaneProjectedVertices_[0].y + 50), CV_FONT_HERSHEY_SIMPLEX, 0.3, WHITE, 1, CV_AA);
-
-		putText(outputFrame, "Angle: " + to_string(angleOfMotion_), Point2f(imagePlaneProjectedVertices_[0].x, imagePlaneProjectedVertices_[0].y + 70), CV_FONT_HERSHEY_SIMPLEX, 0.3, WHITE, 1, CV_AA);
-	}
-}
 

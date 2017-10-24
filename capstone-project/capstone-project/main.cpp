@@ -24,7 +24,7 @@ int main(void)
 {
 
 	cout << "Vehicle Speed Estimation Using Optical Flow And 3D Modeling" << endl; cout << endl;
-	
+
 	FileStorage fs("parameters.yml", FileStorage::READ);
 	fs["Camera Matrix"] >> cameraMatrix;
 	fs["Distortion Coefficients"] >> distCoeffs;
@@ -106,10 +106,16 @@ int main(void)
 		vector<vector<Point> > contours;
 		findContours(morph, contours, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
 
-		vector<Blob> currentFrameBlobs;
+		vector<vector<Point>> convexHulls(contours.size());
 		for (int i = 0; i < contours.size(); i++)
 		{
-			Rect rect = boundingRect(contours[i]);
+			convexHull(contours[i], convexHulls[i]);
+		}
+
+		vector<Blob> currentFrameBlobs;
+		for (int i = 0; i < convexHulls.size(); i++)
+		{
+			Rect rect = boundingRect(convexHulls[i]);
 			double aspectRatio, diagonalSize;
 			aspectRatio = (double)rect.width / (double)rect.height;
 			diagonalSize = sqrt(pow(rect.width, 2) + pow(rect.height, 2));
@@ -139,22 +145,60 @@ int main(void)
 
 		for (int i = 0; i < tracks.size(); i++)
 		{
-			if (tracks[i].getNoMatchCount() < 3 && tracks[i].getMatchCount() > 10)
+			if (tracks[i].getNoMatchCount() < 3 && tracks[i].getMatchCount() > 5)
 			{
 				Blob blob = tracks[i].getPrevBlob();
 				Cuboid cuboid = tracks[i].getPrevCuboid();
 				Scalar trackColor = tracks[i].getTrackColor();
-				
-				blob.drawBlob(imgTracks, trackColor, 2);
-				blob.drawBlobFlows(imgTracks, GREEN, 1);
-				blob.drawBlobInfo(imgTracks, trackColor, CV_FONT_HERSHEY_SIMPLEX, WHITE, 1);
 
-				tracks[i].drawBlobTrail(imgTracks, 10, trackColor, 2);
-				tracks[i].drawTrackInfoOnBlobs(imgTracks, trackColor, CV_FONT_HERSHEY_SIMPLEX, WHITE, 1);
+				tracks[i].drawCuboid(imgCuboids, trackColor, 1);
 
-				cuboid.drawCuboid(imgCuboids, trackColor, 1);
-				tracks[i].drawCuboidTrail(imgCuboids, 10, trackColor, 2);
-				//tracks[i].drawTrackInfoOnCuboids(imgCuboids, trackColor, CV_FONT_HERSHEY_SIMPLEX, WHITE, 1);
+				vector<vector<Point2f>> ip_flows = cuboid.getIPFlows();
+				for (int i = 0; i < ip_flows.size(); i++)
+				{
+					arrowedLine(imgCuboids, ip_flows[i][0], ip_flows[i][1], Scalar(0, 255, 0), 1, CV_AA);
+				}
+				vector<vector<Point3f>> cp_flows = cuboid.getCPFlows();
+				vector<Point3f> objectPoints1, objectPoints2;
+				for (int i = 0; i < cp_flows.size(); i++)
+				{
+					Point3f point1 = cp_flows[i][0];
+					Point3f point2 = cp_flows[i][1];
+					objectPoints1.push_back(point1);
+					objectPoints2.push_back(point2);
+				}
+				vector<Point2f> imagePoints1, imagePoints2;
+				projectPoints(objectPoints1, rotationVector, translationVector, cameraMatrix, distCoeffs, imagePoints1);
+				projectPoints(objectPoints2, rotationVector, translationVector, cameraMatrix, distCoeffs, imagePoints2);
+				for (int i = 0; i < imagePoints1.size(); i++)
+				{
+					circle(imgCuboids, imagePoints1[i], 1, Scalar(0, 0, 255), 1, CV_AA);
+				}
+
+				/*if (convexHull.size() > 0)
+				{
+				vector<vector<Point2f>> temp;
+				temp.push_back(convexHull);
+				drawContours(imgCuboids, temp, -1, RED, 1, CV_AA);
+				}*/
+				/*vector<vector<Point3f>> gp_flows = cuboid.getGPFlows();
+				vector<Point3f> objectPoints3, objectPoints4;
+				for (int i = 0; i < gp_flows.size(); i++)
+				{
+				Point3f point1 = gp_flows[i][0];
+				Point3f point2 = gp_flows[i][1];
+				objectPoints3.push_back(point1);
+				objectPoints4.push_back(point2);
+				}
+				vector<Point2f> imagePoints3, imagePoints4;
+				projectPoints(objectPoints3, rotationVector, translationVector, cameraMatrix, distCoeffs, imagePoints3);
+				projectPoints(objectPoints4, rotationVector, translationVector, cameraMatrix, distCoeffs, imagePoints4);
+				for (int i = 0; i < imagePoints3.size(); i++)
+				{
+				circle(imgCuboids, imagePoints3[i], 1, Scalar(0, 0, 255), 1, CV_AA);
+				arrowedLine(imgCuboids, imagePoints3[i], imagePoints4[i], Scalar(0, 255, 0), 1, CV_AA);
+				}*/
+
 
 			}
 
@@ -163,7 +207,7 @@ int main(void)
 				tracks[i].incrementNoMatchCount();
 			}
 
-			if (tracks[i].getNoMatchCount() > 10)
+			if (tracks[i].getNoMatchCount() > 15)
 			{
 				tracks[i].setBoolBeingTracked(false);
 			}
@@ -173,19 +217,27 @@ int main(void)
 			}
 		}
 
-		displayInfo(imgTracks, BLACK, CV_FONT_HERSHEY_SIMPLEX, 0.35, WHITE);
 		displayInfo(imgCuboids, BLACK, CV_FONT_HERSHEY_SIMPLEX, 0.35, WHITE);
 
-		rectangle(imgTracks, Point((imgTracks.cols * 2 / 3) - 10, 0), Point(imgTracks.cols, 14), BLACK, -1, CV_AA);
-		putText(imgTracks, "Vehicle Detection and Tracking", Point((imgTracks.cols * 2 / 3) - 5, 10), CV_FONT_HERSHEY_SIMPLEX, 0.35, GREEN, 0.35, CV_AA);
+		rectangle(imgCuboids, Point((imgCuboids.cols * 2 / 3) - 10, 0), Point(imgCuboids.cols, 14), BLACK, -1, CV_AA);
+		putText(imgCuboids, "Vehicle Detection and Tracking", Point((imgCuboids.cols * 2 / 3) - 5, 10), CV_FONT_HERSHEY_SIMPLEX, 0.35, WHITE, 0.35, CV_AA);
 
-		//imshow("Tracks", imgTracks);
+		vector<Point3f> objectPoints; vector<Point2f> imagePoints;
+		objectPoints.push_back(Point3f(0.0, 0.0, 0.0));
+		objectPoints.push_back(Point3f(1.0, 0.0, 0.0));
+		objectPoints.push_back(Point3f(0.0, 1.0, 0.0));
+		objectPoints.push_back(Point3f(0.0, 0.0, 1.0));
+		projectPoints(objectPoints, rotationVector, translationVector, cameraMatrix, distCoeffs, imagePoints);
+		arrowedLine(imgCuboids, imagePoints[0], imagePoints[1], RED, 1, CV_AA);
+		arrowedLine(imgCuboids, imagePoints[0], imagePoints[2], BLUE, 1, CV_AA);
+		arrowedLine(imgCuboids, imagePoints[0], imagePoints[3], GREEN, 1, CV_AA);
+
 		imshow("Cuboids", imgCuboids);
 
 		currentFrame = nextFrame.clone();
 		capture.read(nextFrame);
 
-		key = waitKey(1000 / frameRate);
+		key = waitKey(/*1000 / frameRate*/ 0);
 	}
 	return 0;
 }
@@ -227,11 +279,9 @@ void matchBlobs(vector<Blob> &blobs)
 		if (leastDistance < blobs[i].getDiagonalSize() * 0.5)
 		{
 			tracks[index_leastDistance].add(blobs[i]);
-			tracks[index_leastDistance].setBoolTrackUpdated(true);
-			tracks[index_leastDistance].incrementMatchCount();
-			tracks[index_leastDistance].clearNoMatchCount();
 
-			if (tracks[index_leastDistance].getMatchCount() == 10)
+
+			if (tracks[index_leastDistance].getMatchCount() == 5)
 			{
 				trackCount++;
 				tracks[index_leastDistance].setTrackNumber(trackCount);
@@ -259,12 +309,12 @@ void displayInfo(Mat &outputFrame, Scalar backgroundColor, int fontFace, double 
 
 	rectangle(outputFrame, Point(8, 60), Point(180, 75), backgroundColor, -1, CV_AA);
 	putText(outputFrame, "Frame Count: " + to_string(currentFrameCount) + " / " + to_string((int)totalFrameCount), Point(10, 70), fontFace, 0.35, fontColor, fontScale, CV_AA);
-	
+
 	rectangle(outputFrame, Point(8, 80), Point(180, 95), backgroundColor, -1, CV_AA);
 	putText(outputFrame, "Vehicle Count: " + to_string(trackCount), Point(10, 90), fontFace, fontScale, fontColor, 0.35, CV_AA);
-	
+
 	rectangle(outputFrame, Point(8, 100), Point(180, 115), backgroundColor, -1, CV_AA);
 	putText(outputFrame, "Being Tracked: " + to_string(tracks.size()), Point(10, 110), fontFace, fontScale, fontColor, 0.35, CV_AA);
-	
+
 	putText(outputFrame, "Vehicle Speed Estimation Using Optical Flow And 3D Modeling by Indrajeet Datta", Point(5, imgTracks.rows - 10), fontFace, 0.3, fontColor, fontScale, CV_AA);
 }

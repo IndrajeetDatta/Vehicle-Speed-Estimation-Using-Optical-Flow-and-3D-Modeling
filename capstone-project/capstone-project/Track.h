@@ -8,51 +8,52 @@ class Track
 {
 private:
 
-	vector<Blob> blobs_;
-	vector<Cuboid> cuboids_;
-	float cuboidLength_, cuboidWidth_, cuboidHeight_, angleOfMotion_, motionX_, motionY_;
+	vector<Blob> v_blobs;
+	vector<Cuboid> v_cuboids;
+	Point3f nextPoint;
+	float initialCuboidLength, initialCuboidWidth, initialCuboidHeight, initialAngleOfMotion, initialMotionX, initialMotionY, optimizedCuboidLength, optimizedCuboidWidth, optimizedCuboidHeight, optimizedAngleOfMotion, optimizedMotionX, optimizedMotionY;
+
 	vector<float> instantaneousSpeeds_;
-	float averageSpeed_;
-	bool trackUpdated_;
-	bool beingTracked_;
-	int matchCount_;
-	int noMatchCount_;
-	int trackNumber_ = 0;
-	Scalar trackColor_;
-	vector<vector<Point3f> > planeProjectedFlowTails_, planeProjectedFlowHeads_;
+	float averageSpeed;
+	bool trackUpdated;
+	bool beingTracked;
+	int matchCount;
+	int noMatchCount;
+	int trackNumber = 0;
+	int cuboidCount = 0;
+	Scalar trackColor;
 
 public:
 
-	Track(const Blob &blob);
+	Track(Blob &blob);
 	~Track();
 
-	vector<Blob> getBlobs() const { return blobs_; }
-	vector<Cuboid> getCuboids() const { return cuboids_; }
-	bool isTrackUpdated() const { return trackUpdated_; }
-	bool isBeingTracked() const { return beingTracked_; }
-	int getMatchCount() const { return matchCount_; }
-	int getNoMatchCount() const { return noMatchCount_; }
-	int	getTrackNumber() const { return trackNumber_; }
-	Scalar getTrackColor() const { return trackColor_; }
-	Blob getPrevBlob() const { return blobs_.back(); }
-	Cuboid getPrevCuboid() const { return cuboids_.back(); }
-	vector<vector<Point3f> > getPlaneProjectedFlowTails() { return planeProjectedFlowTails_; }
-	vector<vector<Point3f> > getPlaneProjectedFlowHeads() { return planeProjectedFlowHeads_; }
+	vector<Blob> getBlobs() const { return this->v_blobs; }
+	vector<Cuboid> getCuboids() const { return this->v_cuboids; }
+	bool isTrackUpdated() const { return this->trackUpdated; }
+	bool isBeingTracked() const { return this->beingTracked; }
+	int getMatchCount() const { return this->matchCount; }
+	int getNoMatchCount() const { return this->noMatchCount; }
+	int	getTrackNumber() const { return this->trackNumber; }
+	Scalar getTrackColor() const { return this->trackColor; }
+	Blob getPrevBlob() const { return this->v_blobs.back(); }
+	Cuboid getPrevCuboid() const { return this->v_cuboids.back(); }
 
-	void add(const Blob &blob);
-	void setBoolTrackUpdated(bool value) { trackUpdated_ = value; }
-	void setBoolBeingTracked(bool value) { beingTracked_ = value; }
-	void incrementMatchCount() { matchCount_++; }
-	void incrementNoMatchCount() { noMatchCount_++; }
-	void clearNoMatchCount() { noMatchCount_ = 0; }
-	void setTrackNumber(int value) { trackNumber_ = value; }
+
+	void add(Blob &blob);
+	void setBoolTrackUpdated(bool value) { this->trackUpdated = value; }
+	void setBoolBeingTracked(bool value) { this->beingTracked = value; }
+	void incrementMatchCount() { this->matchCount++; }
+	void incrementNoMatchCount() { this->noMatchCount++; }
+	void clearNoMatchCount() { this->noMatchCount = 0; }
+	void setTrackNumber(int value) { this->trackNumber = value; }
 	float findAverageSpeed();
 
 
 	void drawBlobTrail(Mat &outputFrame, int trailLength, Scalar trailColor, int trailThickness);
-	void drawCuboidTrail(Mat &outputFrame, int trailLength, Scalar trailColor, int trailThickness);
-	void drawTrackInfoOnBlobs(Mat &outputFrame, Scalar backgroundColor, int fontFace, Scalar fontColor, int fontThickness);
-	void drawTrackInfoOnCuboids(Mat &outputFrame, Scalar backgroundColor, int fontFace, Scalar fontColor, int fontThickness);
+	void drawCuboidInfo(Mat &outputFrame, Scalar backgroundColor, int fontFace, Scalar fontColor, int fontThickness);
+	void drawCuboid(Mat &outputFrame, Scalar color, int lineThickness);
+
 };
 
 

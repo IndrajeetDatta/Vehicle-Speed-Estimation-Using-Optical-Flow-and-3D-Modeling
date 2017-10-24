@@ -6,45 +6,41 @@ class Blob
 
 private:
 
-	vector<Point> contour_;
-	Rect boundingRectangle_;
-	float area_, width_, height_, diagonalSize_, aspectRatio_;
-	Point  center_, bottomLeftCorner_, bottomRightCorner_, topLeftCorner_, topRightCorner_;
-	vector<Point2f> flowTails_, flowHeads_;
-	vector<Point3f> groundPlaneFlowTails_, groundPlaneFlowHeads_;
-	float averageFlowDistanceX_, averageFlowDistanceY_, angleOfMotion_;
+	vector<Point> contour;
+	Rect boundingRectangle;
+	float area, width, height, diagonalSize, aspectRatio, angleOfMotion;
+	Point  center;
+	vector<Point2f> v_flowTails, v_flowHeads;
 
 public:
 
 	Blob(const vector<Point> &contour);
-	Blob();
 	~Blob();
 
 	//getter functions
 
-	vector<Point> getContour() const { return contour_; }
-	Rect getBoundingRect() const { return boundingRectangle_; }
-	float getArea() const { return area_; }
-	float getWidth() const { return width_; }
-	float getHeight() const { return height_; }
-	float getDiagonalSize() const { return diagonalSize_; }
-	float getAspectRatio() const { return aspectRatio_; }
-	Point getCenter() const { return center_; }
-	Point getBottomLeftCorner() const { return bottomLeftCorner_; }
-	Point getBottomRightCorner() const { return bottomRightCorner_; }
-	Point getTopLeftCorner() const { return topLeftCorner_; }
-	Point getTopRightCorner() const { return topRightCorner_; }
-	vector<Point2f>getFlowTails() const { return flowTails_; }
-	vector<Point2f> getFlowHeads() const { return flowHeads_; }
-	vector<Point3f> getGroundPlaneFlowTails() const { return groundPlaneFlowTails_; }
-	vector<Point3f> getGroundPlaneFlowHeads() const { return groundPlaneFlowHeads_; }
-	float getAverageFlowDistanceX() const { return averageFlowDistanceX_; }
-	float getAverageFlowDistanceY() const { return averageFlowDistanceY_; }
-	float getAngleOfMotion() const { return angleOfMotion_; }
+	vector<Point> getContour() const { return this->contour; }
+
+	Rect getBoundingRect() const { return this->boundingRectangle; }
+
+	float getArea() const { return this->area; }
+	float getWidth() const { return this->width; }
+	float getHeight() const { return this->height; }
+	float getDiagonalSize() const { return this->diagonalSize; }
+	float getAspectRatio() const { return this->aspectRatio; }
+	float getAngleOfMotion() const { return this->angleOfMotion; }
+
+	Point getCenter() const { return this->center; }
+	vector<Point2f> getFlowTails() const { return this->v_flowTails; }
+	vector<Point2f> getFlowHeads() const { return this->v_flowHeads; }
+
+	void findFeatures();
+	void findFlows();
+
+	void setFlowTails(vector<Point2f> flowTails) { this->v_flowTails = flowTails; }
 
 	void drawBlob(Mat &outputFrame, Scalar rectColor, int rectThickness, Scalar contourColor = BLUE, int contourThickness = 1, Scalar centerColor = GREEN, int centerThickness = 1);
 	void drawBlobFlows(Mat &outputFrame, Scalar flowColor, int flowThickness);
-	void drawBlobInfo(Mat &outputFrame, Scalar backgroundColor, int fontFace, Scalar fontColor, int fontThickness);
 
 };
 

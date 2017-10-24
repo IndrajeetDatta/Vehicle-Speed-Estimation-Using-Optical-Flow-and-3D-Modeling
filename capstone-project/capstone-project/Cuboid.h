@@ -4,34 +4,40 @@ class Cuboid
 {
 private:
 
-	float length_, width_, height_, angleOfMotion_;
-	Point3f b1_, b2_, b3_, b4_, t1_, t2_, t3_, t4_;
-	Point3f centroid_;
-	Point projectedCentroid_;
-	vector<Point3f> vertices_;
-	vector<Point2f> imagePlaneProjectedVertices_;
-	vector<vector<Point3f>> planeVertices_;
-	vector <vector<Point2f>> measuredOpticalFlowHeads_;
+	int cuboidNumber;
+	float length, width, height, angleOfMotion, motionX, motionY;
+	Point3f b1, b2, b3, b4, t1, t2, t3, t4;
+	Point3f centroid;
+	vector<Point3f> v_vertices;
+	vector<Point2f> v_ipVertices;
+	vector<Point2f> v_convexHull;
+	vector<vector<Point3f>> v_planeVertices;
+	vector<vector<float>> v_planeParameters;
+	vector <vector<Point2f>> v_ip_flows;
+	vector<vector<Point3f>> v_cp_flows;
+	vector<vector<Point3f>> v_gp_flows;
 
 public:
 
-	Cuboid(Point3f &point, float length, float width, float height, float angleOfMotion);
+	Cuboid(Point3f point, float length, float width, float height, float angleOfMotion);
 	Cuboid();
 	~Cuboid();
 
-	float getLength() const { return length_; }
-	float getWidth() const { return width_; }
-	float getHeight() const { return height_; }
-	float getAngleOfMotion() const { return angleOfMotion_; }
-	Point3f getB1() const { return b1_; }
-	Point3f getCentroid() const { return centroid_; }
-	Point2f getProjectedCentroid() const { return projectedCentroid_; }
-	vector<Point3f> getVertices() const { return vertices_; }
-	vector <vector<Point3f> > getPlaneVertices() const{ return planeVertices_; }
-	vector<Point2f> getProjectedVertices() const { return imagePlaneProjectedVertices_; }
-	void setMeasuredOpticalFlowHeads(vector<vector<Point2f>> flowHeads) { measuredOpticalFlowHeads_ = flowHeads; }
-	vector<vector<Point2f>> getMeasuredOpticalFlowHeads() { return measuredOpticalFlowHeads_; }
-	void drawCuboid(Mat &outputFrame, Scalar color, int lineThickness);
+	float getLength() const { return this->length; }
+	float getWidth() const { return this->width; }
+	float getHeight() const { return this->height; }
+	float getAngleOfMotion() const { return this->angleOfMotion; }
+	Point3f getCentroid() const { return this->centroid; }
+	vector<Point3f> getVertices() const { return this->v_vertices; }
+	vector <vector<Point3f> > getPlaneVertices() const { return this->v_planeVertices; }
+	vector<Point2f> getIPVertices() const { return this->v_ipVertices; }
+	vector<Point2f> getConvexHull() const { return this->v_convexHull; }
+	vector<vector<float>> getPlaneParameters() const { return this->v_planeParameters; }
+	vector<vector<Point2f>> getIPFlows() const { return this->v_ip_flows; }
+	vector<vector<Point3f>> getCPFlows() const { return this->v_cp_flows; }
+	vector<vector<Point3f>> getGPFlows() const { return this->v_gp_flows; }
+	void Cuboid::findFlowsOnPlanes(vector<Point2f> flowTails, vector<Point2f> flowHeads);
+
 };
 
 
