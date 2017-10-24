@@ -268,7 +268,7 @@ void matchBlobs(vector<Blob> &blobs)
 			}
 
 			double averageDistance = sumDistances / (double)flowHeads.size();
-
+s
 			if (averageDistance < leastDistance)
 			{
 				leastDistance = averageDistance;
