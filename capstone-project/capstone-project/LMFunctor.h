@@ -28,15 +28,13 @@ struct LMFunctor
 
 	int operator()(const VectorXf &x, VectorXf &fvec) const
 	{
-		//cout << "Flow Tails Size: " << flowTails.size() << endl;
-
 		float param_length = x(0);
 		float param_width = x(1);
 		float param_height = x(2);
 		float param_motionX = x(3);
 		float param_motionY = x(4);
 
-		if (param_length < minLength) param_length = minLength;
+		/*if (param_length < minLength) param_length = minLength;
 		if (param_length > maxLength) param_length = maxLength;
 		if (param_width < minWidth) param_width = minWidth;
 		if (param_width > maxWidth) param_width = maxWidth;
@@ -45,15 +43,14 @@ struct LMFunctor
 		if (param_motionX < minMotionX) param_motionX = minMotionX;
 		if (param_motionX > maxMotionX) param_motionX = maxMotionX;
 		if (param_motionY < minMotionY) param_motionY = minMotionY;
-		if (param_motionY > maxMotionY) param_motionY = maxMotionY;
+		if (param_motionY > maxMotionY) param_motionY = maxMotionY;*/
 
-		cout << endl;
-		cout << "Length: " << param_length << endl;
-		cout << "Width: " << param_width << endl;
-		cout << "Height: " << param_height << endl;
-		cout << "Motion in X-Axis: " << param_motionX << endl;
-		cout << "Motion in Y-Axis: " << param_motionY << endl;
-
+		/*optimizationData << "param_length"  << param_length;
+		optimizationData << "param_width" << param_width; 
+		optimizationData << "param_height" << param_height; 
+		optimizationData << "param_motion_x" << param_motionX; 
+		optimizationData << "param_motion_y" << param_motionY;
+*/
 		Cuboid cuboid(point, param_length, param_width, param_height, atan(param_motionX / param_motionY));
 		vector<vector<float>> v_planeParameters = cuboid.getPlaneParameters();
 		vector<vector<Point3f>> v_planeVertices = cuboid.getPlaneVertices();
@@ -116,21 +113,22 @@ struct LMFunctor
 				}
 				else
 				{
-					fvec(i) = error2;  /*cout << "E2" << endl*/;
+					fvec(i) = error2;  
 				}
 
 			}
 		}
 
 
-		cout << "Error Vector: " << fvec << endl;
+		/*vector<float> errors;
 		float sumErrors = 0;
 		for (int i = 0; i < fvec.size(); i++)
 		{
 			sumErrors += pow(fvec(i), 2);
+			errors.push_back(fvec(i));
 		}
-		cout << "Sum of Errors: " << sumErrors << endl;
-		cout << endl;
+		optimizationData << "error_vector" << errors;
+		optimizationData << "sum_of_errors" << sumErrors;*/
 		return 0;
 	}
 
@@ -155,12 +153,43 @@ struct LMFunctor
 			operator()(xMinus, fvecMinus);
 
 			VectorXf fvecDiff(values());
-			fvecDiff = (fvecPlus - fvecMinus) / (2.0f * epsilon);
+			fvecDiff = (fvecPlus - fvecMinus);
 
-			fjac.block(0, i, values(), 1) = fvecDiff;
-			/*cout << "Jacobian Vector: " << fjac;
-			cout << "Jacobian Vector Rows: " << fjac.rows();*/
+			VectorXf fjacBlock(values());
+			fjacBlock = fvecDiff / (2.0f * epsilon);
+
+			fjac.block(0, i, values(), 1) = fjacBlock;
 		}
+
+		VectorXf err(values());
+		operator()(x, err);
+
+		vector<float> errors; float sum = 0;
+		for (int i = 0; i < err.size(); i++)
+		{
+			errors.push_back(err(i));
+			sum += pow(err(i), 2);
+		}
+		/// Check here. Try to put jacbian in cv::Mat
+		Mat jacobian(fjac.cols, fjac.rows, cv::DataType<float>::type);
+		
+		for (int i = 0; i < fjac.rows(); i++)
+		{
+			for (int j = 0; j < fjac.cols(); j++)
+			{
+				float value = fjac(i, j);
+				jacobian.at<float>(i, j) = value;
+			}
+		}
+		cout << "Jacobian: " << jacobian << endl;
+		optimizationData << "param-length" << x(0);
+		optimizationData << "param-width" << x(1);
+		optimizationData << "param-height" << x(2);
+		optimizationData << "param-motion-x" << x(3);
+		optimizationData << "param-motion-y" << x(4);
+		optimizationData << "Errors" << errors;
+		optimizationData << "Sum-of-squared-errors" << sum;
+		//optimizationData << "Jacobian" << jacobian;
 		return 0;
 	}
 
@@ -177,4 +206,3 @@ struct LMFunctor
 };
 
 #endif // !LMFUNCTOR_H
-

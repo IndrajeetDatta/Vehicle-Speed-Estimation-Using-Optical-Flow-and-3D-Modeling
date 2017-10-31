@@ -7,7 +7,7 @@ using namespace cv;
 
 extern Mat cameraMatrix, distCoeffs, rotationVector, translationVector, rotationMatrix, inverseHomographyMatrix;
 
-extern float frameRate, videoTimeElapsed, realTimeElapsed, totalFrameCount, frameHeight, frameWidth, fourCC;
+extern float frameRate, videoTimeElapsed, totalFrameCount, frameHeight, frameWidth, fourCC;
 
 extern int currentFrameCount;
 
@@ -18,6 +18,8 @@ extern Mat currentFrame, nextFrame, currentFrame_gray, nextFrame_gray, currentFr
 extern const Point3f cameraCenter;
 
 extern const float initialCuboidLength, initialCuboidWidth, initialCuboidHeight;
+
+extern FileStorage optimizationData;
 
 Point3f findWorldPoint(const Point2f &imagePoint, double zConst, const Mat &cameraMatrix, const Mat &rotationMatrix, const Mat &translationVector);
 
@@ -30,4 +32,3 @@ bool pointInsideRect(vector<Point3f> points, Point3f point);
 float findMedian(vector<float> values);
 void eliminateOutliers(vector<Point3f> groundPlaneFlowTails, vector<Point3f> groundPlaneFlowHeads);
 void eliminateOutliers(vector<Point2f> flowTails, vector<Point2f> flowHeads);
-

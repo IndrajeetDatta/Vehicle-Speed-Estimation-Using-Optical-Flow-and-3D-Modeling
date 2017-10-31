@@ -51,25 +51,7 @@ void Blob::findFlows()
 	eliminateOutliers(this->v_flowTails, this->v_flowHeads);
 }
 
+
+
+
 Blob::~Blob() {}
-
-void Blob::drawBlob(Mat &outputFrame, Scalar rectColor, int rectThickness, Scalar contourColor, int contourThickness, Scalar centerColor, int centerThickness)
-{
-	vector<vector<Point> > contours;
-
-	contours.push_back(getContour());
-
-	rectangle(outputFrame, getBoundingRect(), rectColor, 1, CV_AA);
-
-	drawContours(outputFrame, contours, -1, contourColor, 1, CV_AA);
-
-	circle(outputFrame, getCenter(), 1, centerColor, -1, CV_AA);
-}
-
-void Blob::drawBlobFlows(Mat &outputFrame, Scalar flowColor, int flowThickness)
-{
-	for (int i = 0; i < getFlowTails().size(); i++)
-	{
-		arrowedLine(outputFrame, getFlowTails()[i], getFlowHeads()[i], flowColor, flowThickness);
-	}
-}

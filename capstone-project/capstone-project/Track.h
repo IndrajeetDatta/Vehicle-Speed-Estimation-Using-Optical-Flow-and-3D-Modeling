@@ -7,25 +7,25 @@
 class Track
 {
 private:
-
+	int trackNumber;
 	vector<Blob> v_blobs;
 	vector<Cuboid> v_cuboids;
+	float initialCuboidLength, initialCuboidWidth, initialCuboidHeight, initialMotionX, initialMotionY, optimizedCuboidLength, optimizedCuboidWidth, optimizedCuboidHeight, optimizedMotionX, optimizedMotionY;
 	Point3f nextPoint;
-	float initialCuboidLength, initialCuboidWidth, initialCuboidHeight, initialAngleOfMotion, initialMotionX, initialMotionY, optimizedCuboidLength, optimizedCuboidWidth, optimizedCuboidHeight, optimizedAngleOfMotion, optimizedMotionX, optimizedMotionY;
+	
 
-	vector<float> instantaneousSpeeds_;
+	vector<float> instantaneousSpeeds;
 	float averageSpeed;
 	bool trackUpdated;
 	bool beingTracked;
 	int matchCount;
 	int noMatchCount;
-	int trackNumber = 0;
 	int cuboidCount = 0;
 	Scalar trackColor;
 
 public:
 
-	Track(Blob &blob);
+	Track(Blob &blob, int trackNumber);
 	~Track();
 
 	vector<Blob> getBlobs() const { return this->v_blobs; }
@@ -36,8 +36,8 @@ public:
 	int getNoMatchCount() const { return this->noMatchCount; }
 	int	getTrackNumber() const { return this->trackNumber; }
 	Scalar getTrackColor() const { return this->trackColor; }
-	Blob getPrevBlob() const { return this->v_blobs.back(); }
-	Cuboid getPrevCuboid() const { return this->v_cuboids.back(); }
+	Blob getLastBlob() const { return this->v_blobs.back(); }
+	Cuboid getLastCuboid() const { return this->v_cuboids.back(); }
 
 
 	void add(Blob &blob);
@@ -46,16 +46,12 @@ public:
 	void incrementMatchCount() { this->matchCount++; }
 	void incrementNoMatchCount() { this->noMatchCount++; }
 	void clearNoMatchCount() { this->noMatchCount = 0; }
-	void setTrackNumber(int value) { this->trackNumber = value; }
+	void setTrackNumber(int number) { this->trackNumber = number; }
 	float findAverageSpeed();
 
-
-	void drawBlobTrail(Mat &outputFrame, int trailLength, Scalar trailColor, int trailThickness);
-	void drawCuboidInfo(Mat &outputFrame, Scalar backgroundColor, int fontFace, Scalar fontColor, int fontThickness);
-	void drawCuboid(Mat &outputFrame, Scalar color, int lineThickness);
-
+	void Track::drawCuboid(Mat &outputFrame);
+	void Track::drawBlob(Mat &outputFrame);
 };
 
 
 #endif // !TRACK_H
-

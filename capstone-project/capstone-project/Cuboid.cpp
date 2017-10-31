@@ -7,7 +7,7 @@
 using namespace std;
 using namespace cv;
 
-Cuboid::Cuboid(Point3f point, float length, float width, float height, float angleOfMotion)
+Cuboid::Cuboid(Point3f point, float length, float width, float height, float orientation)
 {
 	this->length = length;
 
@@ -15,23 +15,23 @@ Cuboid::Cuboid(Point3f point, float length, float width, float height, float ang
 
 	this->height = height;
 
-	this->angleOfMotion = angleOfMotion;
+	this->orientation = orientation;
 
-	this->b1 = Point3f((point.x - (width / 2)) * cos(angleOfMotion) - (point.y - (length / 2)) * sin(angleOfMotion), (point.x - (width / 2)) * sin(angleOfMotion) + (point.y - (length / 2)) * cos(angleOfMotion), 0.0);
+	Point3f b1 = Point3f((point.x - (width / 2)) * cos(orientation) - (point.y - (length / 2)) * sin(orientation), (point.x - (width / 2)) * sin(orientation) + (point.y - (length / 2)) * cos(orientation), 0.0);
 
-	this->b2 = Point3f((point.x - (width / 2)) * cos(angleOfMotion) - (point.y + (length / 2)) * sin(angleOfMotion), (point.x - (width / 2)) * sin(angleOfMotion) + (point.y + (length / 2)) * cos(angleOfMotion), 0.0);
+	Point3f b2 = Point3f((point.x - (width / 2)) * cos(orientation) - (point.y + (length / 2)) * sin(orientation), (point.x - (width / 2)) * sin(orientation) + (point.y + (length / 2)) * cos(orientation), 0.0);
 
-	this->b3 = Point3f((point.x + (width / 2)) * cos(angleOfMotion) - (point.y + (length / 2)) * sin(angleOfMotion), (point.x + (width / 2)) * sin(angleOfMotion) + (point.y + (length / 2)) * cos(angleOfMotion), 0.0);
+	Point3f b3 = Point3f((point.x + (width / 2)) * cos(orientation) - (point.y + (length / 2)) * sin(orientation), (point.x + (width / 2)) * sin(orientation) + (point.y + (length / 2)) * cos(orientation), 0.0);
 
-	this->b4 = Point3f((point.x + (width / 2)) * cos(angleOfMotion) - (point.y - (length / 2)) * sin(angleOfMotion), (point.x + (width / 2)) * sin(angleOfMotion) + (point.y - (length / 2)) * cos(angleOfMotion), 0.0);
+	Point3f b4 = Point3f((point.x + (width / 2)) * cos(orientation) - (point.y - (length / 2)) * sin(orientation), (point.x + (width / 2)) * sin(orientation) + (point.y - (length / 2)) * cos(orientation), 0.0);
 
-	this->t1 = Point3f((point.x - (width / 2)) * cos(angleOfMotion) - (point.y - (length / 2)) * sin(angleOfMotion), (point.x - (width / 2)) * sin(angleOfMotion) + (point.y - (length / 2)) * cos(angleOfMotion), height);
+	Point3f t1 = Point3f((point.x - (width / 2)) * cos(orientation) - (point.y - (length / 2)) * sin(orientation), (point.x - (width / 2)) * sin(orientation) + (point.y - (length / 2)) * cos(orientation), height);
 
-	this->t2 = Point3f((point.x - (width / 2)) * cos(angleOfMotion) - (point.y + (length / 2)) * sin(angleOfMotion), (point.x - (width / 2)) * sin(angleOfMotion) + (point.y + (length / 2)) * cos(angleOfMotion), height);
+	Point3f t2 = Point3f((point.x - (width / 2)) * cos(orientation) - (point.y + (length / 2)) * sin(orientation), (point.x - (width / 2)) * sin(orientation) + (point.y + (length / 2)) * cos(orientation), height);
 
-	this->t3 = Point3f((point.x + (width / 2)) * cos(angleOfMotion) - (point.y + (length / 2)) * sin(angleOfMotion), (point.x + (width / 2)) * sin(angleOfMotion) + (point.y + (length / 2)) * cos(angleOfMotion), height);
+	Point3f t3 = Point3f((point.x + (width / 2)) * cos(orientation) - (point.y + (length / 2)) * sin(orientation), (point.x + (width / 2)) * sin(orientation) + (point.y + (length / 2)) * cos(orientation), height);
 
-	this->t4 = Point3f((point.x + (width / 2)) * cos(angleOfMotion) - (point.y - (length / 2)) * sin(angleOfMotion), (point.x + (width / 2)) * sin(angleOfMotion) + (point.y - (length / 2)) * cos(angleOfMotion), height);
+	Point3f t4 = Point3f((point.x + (width / 2)) * cos(orientation) - (point.y - (length / 2)) * sin(orientation), (point.x + (width / 2)) * sin(orientation) + (point.y - (length / 2)) * cos(orientation), height);
 
 	this->centroid = Point3f(point.x, point.y, point.z + (height / 2));
 
@@ -110,26 +110,26 @@ Cuboid::Cuboid(Point3f point, float length, float width, float height, float ang
 	this->v_planeParameters.push_back(topPlaneParameters);
 
 	vector<float> frontPlaneParameters;
-	frontPlaneParameters.push_back(-sin(angleOfMotion));
-	frontPlaneParameters.push_back(cos(angleOfMotion));
+	frontPlaneParameters.push_back(-sin(orientation));
+	frontPlaneParameters.push_back(cos(orientation));
 	frontPlaneParameters.push_back(0);
-	frontPlaneParameters.push_back((length / 2) + (centroid.x * sin(angleOfMotion)) - (centroid.y * cos(angleOfMotion)));
+	frontPlaneParameters.push_back((length / 2) + (centroid.x * sin(orientation)) - (centroid.y * cos(orientation)));
 
 	this->v_planeParameters.push_back(frontPlaneParameters);
 
 	vector<float> leftPlaneParameters;
-	leftPlaneParameters.push_back(-cos(angleOfMotion));
-	leftPlaneParameters.push_back(-sin(angleOfMotion));
+	leftPlaneParameters.push_back(-cos(orientation));
+	leftPlaneParameters.push_back(-sin(orientation));
 	leftPlaneParameters.push_back(0);
-	leftPlaneParameters.push_back((width / 2) + (centroid.x * cos(angleOfMotion)) + (centroid.y * sin(angleOfMotion)));
+	leftPlaneParameters.push_back((width / 2) + (centroid.x * cos(orientation)) + (centroid.y * sin(orientation)));
 
 	this->v_planeParameters.push_back(leftPlaneParameters);
 
 	vector<float> rightPlaneParameters;
-	rightPlaneParameters.push_back(cos(angleOfMotion));
-	rightPlaneParameters.push_back(sin(angleOfMotion));
+	rightPlaneParameters.push_back(cos(orientation));
+	rightPlaneParameters.push_back(sin(orientation));
 	rightPlaneParameters.push_back(0);
-	rightPlaneParameters.push_back((width / 2) - (centroid.x * cos(angleOfMotion)) - (centroid.y * sin(angleOfMotion)));
+	rightPlaneParameters.push_back((width / 2) - (centroid.x * cos(orientation)) - (centroid.y * sin(orientation)));
 
 	this->v_planeParameters.push_back(rightPlaneParameters);
 
@@ -142,16 +142,19 @@ Cuboid::Cuboid(Point3f point, float length, float width, float height, float ang
 	this->v_planeParameters.push_back(bottomPlaneParameters);
 
 	vector<float> backPlaneParameters;
-	backPlaneParameters.push_back(sin(angleOfMotion));
-	backPlaneParameters.push_back(-cos(angleOfMotion));
+	backPlaneParameters.push_back(sin(orientation));
+	backPlaneParameters.push_back(-cos(orientation));
 	backPlaneParameters.push_back(0);
-	backPlaneParameters.push_back((length / 2) - (centroid.x * sin(angleOfMotion)) + (centroid.y * cos(angleOfMotion)));
+	backPlaneParameters.push_back((length / 2) - (centroid.x * sin(orientation)) + (centroid.y * cos(orientation)));
 
 	this->v_planeParameters.push_back(backPlaneParameters);
 }
 
+
 void Cuboid::findFlowsOnPlanes(vector<Point2f> flowTails, vector<Point2f> flowHeads)
 {
+	vector<Point3f> cp_flowTails, cp_flowHeads;
+
 	for (int i = 0; i < flowTails.size(); i++)
 	{
 		Point3f gp_ft = findWorldPoint(flowTails[i], 0, cameraMatrix, rotationMatrix, translationVector);
@@ -163,12 +166,11 @@ void Cuboid::findFlowsOnPlanes(vector<Point2f> flowTails, vector<Point2f> flowHe
 			float t1 = -(this->v_planeParameters[j][0] * cameraCenter.x + this->v_planeParameters[j][1] * cameraCenter.y + this->v_planeParameters[j][2] * cameraCenter.z + this->v_planeParameters[j][3]) / (this->v_planeParameters[j][0] * (gp_ft.x - cameraCenter.x) + this->v_planeParameters[j][1] * (gp_ft.y - cameraCenter.y) + this->v_planeParameters[j][2] * (gp_ft.z - cameraCenter.z));
 
 			Point3f point1(cameraCenter.x + ((gp_ft.x - cameraCenter.x) * t1), cameraCenter.y + ((gp_ft.y - cameraCenter.y) * t1), cameraCenter.z + ((gp_ft.z - cameraCenter.z) * t1));
-			//cout << point1 << endl;
+			
 			float t2 = -(this->v_planeParameters[j][0] * cameraCenter.x + this->v_planeParameters[j][1] * cameraCenter.y + this->v_planeParameters[j][2] * cameraCenter.z + this->v_planeParameters[j][3]) / (this->v_planeParameters[j][0] * (gp_fh.x - cameraCenter.x) + this->v_planeParameters[j][1] * (gp_fh.y - cameraCenter.y) + this->v_planeParameters[j][2] * (gp_fh.z - cameraCenter.z));
 
 			Point3f point2(cameraCenter.x + ((gp_fh.x - cameraCenter.x) * t2), cameraCenter.y + ((gp_fh.y - cameraCenter.y) * t2), cameraCenter.z + ((gp_fh.z - cameraCenter.z) * t2));
-			/*cout << point2 << endl;
-			cout << endl;*/
+	
 			bool inside = pointInsideRect(this->v_planeVertices[j], point1) && pointInsideRect(this->v_planeVertices[j], point2);
 
 			if (inside)
@@ -184,25 +186,14 @@ void Cuboid::findFlowsOnPlanes(vector<Point2f> flowTails, vector<Point2f> flowHe
 			}
 		}
 
-		vector<Point2f> temp1;
-		temp1.push_back(flowTails[i]);
-		temp1.push_back(flowHeads[i]);
-		this->v_ip_flows.push_back(temp1);
-
-		vector<Point3f> temp2;
-		temp2.push_back(cp_ft);
-		temp2.push_back(cp_fh);
-		this->v_cp_flows.push_back(temp2);
-
-		vector<Point3f> temp3;
-		temp3.push_back(gp_ft);
-		temp3.push_back(gp_fh);
-		this->v_gp_flows.push_back(temp3);
+		cp_flowTails.push_back(cp_ft);
+		cp_flowHeads.push_back(cp_fh);
 	}
+	this->v_cp_flows.push_back(cp_flowTails);
+	this->v_cp_flows.push_back(cp_flowHeads);
 }
 
 Cuboid::Cuboid() {};
 Cuboid::~Cuboid() {};
-
 
 

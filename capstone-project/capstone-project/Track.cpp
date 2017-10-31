@@ -15,17 +15,22 @@ using namespace cv;
 
 
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////
 
-Track::Track(Blob &blob)
+Track::Track(Blob &blob, int trackNumber)
 {
+	this->trackNumber = trackNumber;
+	this->beingTracked = true;
+	this->trackUpdated = false;
+	this->trackColor = Scalar(rand() % 256, rand() % 256, rand() % 256);
+	this->matchCount = 1;
+	this->noMatchCount = 0;
+
 	blob.findFeatures();
 	blob.findFlows();
 	this->v_blobs.push_back(blob);
 
-	this->beingTracked = true;
-	this->trackUpdated = false;
-	this->trackColor = Scalar(rand() % 256, rand() % 256, rand() % 256);
+	
 
 	this->initialCuboidLength = 5.0; //5.0;
 	this->initialCuboidWidth = 2.0; // 2.0;
@@ -35,13 +40,15 @@ Track::Track(Blob &blob)
 	flowTails = blob.getFlowTails();
 	flowHeads = blob.getFlowHeads();
 
+	
+
 	vector<float> v_flowLengthX, v_flowLengthY;
 	float sum_flowLengthX = 0, sum_flowLengthY = 0;
 
-	cout << "Flow Tails" << "\t" << "Flow Heads" << endl;
+	
+
 	for (int i = 0; i < flowTails.size(); i++)
 	{
-		cout << flowTails[i] << "\t" << flowHeads[i] << endl;
 		Point3f gp_ft = findWorldPoint(flowTails[i], 0.0, cameraMatrix, rotationMatrix, translationVector);
 		Point3f gp_fh = findWorldPoint(flowHeads[i], 0.0, cameraMatrix, rotationMatrix, translationVector);
 
@@ -72,6 +79,13 @@ Track::Track(Blob &blob)
 	float maxMotionX = v_flowLengthX.back();
 	float minMotionY = v_flowLengthY[0];
 	float maxMotionY = v_flowLengthY.back();
+
+	this->cuboidCount++;
+	optimizationData << "frame-number" << currentFrameCount;
+	optimizationData << "track-number" << this->trackNumber;
+	optimizationData << "cuboid-number" << cuboidCount;
+	optimizationData << "flow-tails" << flowTails;
+	optimizationData << "flow-heads" << flowHeads;
 
 	int n = 5;
 	VectorXf parameters(n);
@@ -100,7 +114,6 @@ Track::Track(Blob &blob)
 	functor.minMotionY = minMotionY;
 	functor.maxMotionY = maxMotionY;
 
-	cout << "Cuboid Optimization Started: " << endl;
 	LevenbergMarquardt<LMFunctor, float> lm(functor);
 	int status = lm.minimize(parameters);
 
@@ -128,19 +141,29 @@ Track::Track(Blob &blob)
 		sumErrors += pow(lm.fvec(i), 2);
 	}
 
+	optimizationData << "optimization-status" << status;
 
-	cout << "Optimization results" << endl;
-	cout << "\t Status: " << status << endl;
-	cout << "\t No. of iterations: " << lm.iter << endl;
-	cout << "\t No. of function evaluations: " << lm.nfev << endl;
-	cout << "\t No. of jacobian evaliations: " << lm.njev << endl;
-	cout << "\t Sum of squared errors: " << sumErrors << endl;
-	cout << "\t Intial Length: " << this->initialCuboidLength << " Optimized Length : " << this->optimizedCuboidLength << endl;
-	cout << "\t Intial Width: " << this->initialCuboidWidth << " Optimized Length : " << this->optimizedCuboidWidth << endl;
-	cout << "\t Intial Height: " << this->initialCuboidHeight << " Optimized Height: " << this->optimizedCuboidHeight << endl;
-	cout << "\t Initial Motion in X-axis: " << this->initialMotionX << " Optimized Motion in X-axis: " << this->optimizedMotionX << endl;
-	cout << "\t Intial Motion in Y-axis: " << this->initialMotionY << " Optimized Motion in Y-Axis: " << this->optimizedMotionY << endl;
-	cout << endl << endl;
+	optimizationData << "initial-length" << this->initialCuboidLength;
+
+	optimizationData << "optimized-length" << this->optimizedCuboidLength;
+
+	optimizationData << "initial-width" << this->initialCuboidWidth;
+
+	optimizationData << "optimized-width" << this->optimizedCuboidWidth;
+
+	optimizationData << "initial-height" << this->initialCuboidHeight;
+
+	optimizationData << "optimized-height" << this->optimizedCuboidHeight;
+
+	optimizationData << "initial-motion-x" << this->initialMotionX;
+
+	optimizationData << "optimized-motion-x" << this->optimizedMotionX;
+
+	optimizationData << "initial-motion-y" << this->initialMotionY;
+
+	optimizationData << "optimized_motion-y" << this->optimizedMotionY;
+
+	optimizationData << "sum-of-squared-errors" << sumErrors;
 
 
 
@@ -148,31 +171,28 @@ Track::Track(Blob &blob)
 
 	Cuboid cuboid(point, this->optimizedCuboidLength, this->optimizedCuboidWidth, this->optimizedCuboidHeight, atan(this->optimizedMotionX / this->optimizedMotionY));
 	cuboid.findFlowsOnPlanes(flowTails, flowHeads);
-
+	cuboid.setCuboidNumber(matchCount);
+	
 	this->v_cuboids.push_back(cuboid);
-	cuboidCount++;
+	
 
 	Point3f point2(point.x + this->optimizedMotionX, point.y + this->optimizedMotionY, 0.0);
 	this->nextPoint = point2;
 
-
+	this->instantaneousSpeeds.push_back(0.0);
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////
 
 void Track::add(Blob &blob)
 {
-	blob.setFlowTails(v_blobs.back().getFlowHeads());
-	blob.findFlows();
-	this->v_blobs.push_back(blob);
-
 	this->trackUpdated = true;
 	this->matchCount++;
 	this->noMatchCount = 0;
 
-
-
-
+	blob.setFlowTails(v_blobs.back().getFlowHeads());
+	blob.findFlows();
+	this->v_blobs.push_back(blob);
 
 	this->initialCuboidLength = this->optimizedCuboidLength;
 	this->initialCuboidWidth = this->optimizedCuboidWidth;
@@ -182,13 +202,13 @@ void Track::add(Blob &blob)
 	flowTails = blob.getFlowTails();
 	flowHeads = blob.getFlowHeads();
 
+
+
 	vector<float> v_flowLengthX, v_flowLengthY;
 	float sum_flowLengthX = 0, sum_flowLengthY = 0;
 
-	cout << "Flow Tails" << "\t" << "Flow Heads" << endl;
 	for (int i = 0; i < flowTails.size(); i++)
 	{
-		cout << flowTails[i] << "\t" << flowHeads[i] << endl;
 		Point3f gp_ft = findWorldPoint(flowTails[i], 0.0, cameraMatrix, rotationMatrix, translationVector);
 		Point3f gp_fh = findWorldPoint(flowHeads[i], 0.0, cameraMatrix, rotationMatrix, translationVector);
 
@@ -218,6 +238,13 @@ void Track::add(Blob &blob)
 	float minMotionY = v_flowLengthY[0];
 	float maxMotionY = v_flowLengthY.back();
 
+	this->cuboidCount++;
+	optimizationData << "frame-number" << currentFrameCount;
+	optimizationData << "track-number" << this->trackNumber;
+	optimizationData << "cuboid-number" << cuboidCount;
+	optimizationData << "flow-tails" << flowTails;
+	optimizationData << "flow-heads" << flowHeads;
+
 	int n = 5;
 	VectorXf parameters(n);
 	parameters(0) = this->initialCuboidLength;
@@ -245,7 +272,7 @@ void Track::add(Blob &blob)
 	functor.minMotionY = minMotionY;
 	functor.maxMotionY = maxMotionY;
 
-	cout << "Cuboid Optimization Started: " << endl;
+
 	LevenbergMarquardt<LMFunctor, float> lm(functor);
 	int status = lm.minimize(parameters);
 
@@ -273,23 +300,36 @@ void Track::add(Blob &blob)
 	}
 
 
-	cout << "Optimization results" << endl;
-	cout << "\t Status: " << status << endl;
-	cout << "\t No. of iterations: " << lm.iter << endl;
-	cout << "\t No. of function evaluations: " << lm.nfev << endl;
-	cout << "\t No. of jacobian evaliations: " << lm.njev << endl;
-	cout << "\t Sum of squared errors: " << sumErrors << endl;
-	cout << "\t Intial Length: " << this->initialCuboidLength << " Optimized Length : " << this->optimizedCuboidLength << endl;
-	cout << "\t Intial Width: " << this->initialCuboidWidth << " Optimized Length : " << this->optimizedCuboidWidth << endl;
-	cout << "\t Intial Height: " << this->initialCuboidHeight << " Optimized Height: " << this->optimizedCuboidHeight << endl;
-	cout << "\t Initial Motion in X-axis: " << this->initialMotionX << " Optimized Motion in X-axis: " << this->optimizedMotionX << endl;
-	cout << "\t Intial Motion in Y-axis: " << this->initialMotionY << " Optimized Motion in Y-Axis: " << this->optimizedMotionY << endl;
 
+	optimizationData << "optimization-status" << status;
+
+	optimizationData << "initial-length" << this->initialCuboidLength;
+
+	optimizationData << "optimized-length" << this->optimizedCuboidLength;
+
+	optimizationData << "initial-width" << this->initialCuboidWidth;
+
+	optimizationData << "optimized-width" << this->optimizedCuboidWidth;
+
+	optimizationData << "initial-height" << this->initialCuboidHeight;
+
+	optimizationData << "optimized-height" << this->optimizedCuboidHeight;
+
+	optimizationData << "initial-motion-x"<< this->initialMotionX;
+
+	optimizationData << "optimized-motion-x"<< this->optimizedMotionX;
+
+	optimizationData << "initial-motion-y" << this->initialMotionY;
+
+	optimizationData << "optimized-motion-y"<< this->optimizedMotionY;
+
+	optimizationData << "sum-of-squared-errors" << sumErrors;
+	
 	Cuboid cuboid(point, this->optimizedCuboidLength, this->optimizedCuboidWidth, this->optimizedCuboidHeight, atan(this->optimizedMotionX / this->optimizedMotionY));
+	cuboid.setCuboidNumber(matchCount);
 	cuboid.findFlowsOnPlanes(flowTails, flowHeads);
-
 	this->v_cuboids.push_back(cuboid);
-	cuboidCount++;
+	
 
 	Point3f point2(point.x + this->optimizedMotionX, point.y + this->optimizedMotionY, 0.0);
 	this->nextPoint = point2;
@@ -298,87 +338,97 @@ void Track::add(Blob &blob)
 	Point3f centroid2 = v_cuboids.rbegin()[1].getCentroid();
 	float speed = sqrt(pow((centroid1.x - centroid2.x), 2) + pow((centroid1.y - centroid2.y), 2)) / (1 / frameRate) * 3.6;
 
-	instantaneousSpeeds_.push_back(speed);
+	this->instantaneousSpeeds.push_back(speed);
 }
-////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////
+
 float Track::findAverageSpeed()
 {
 	double total = 0;
 
-	for (int i = 0; i < instantaneousSpeeds_.size(); i++)
+	for (int i = 0; i < instantaneousSpeeds.size(); i++)
 	{
-		total += instantaneousSpeeds_[i];
+		total += instantaneousSpeeds[i];
 	}
-	return total / instantaneousSpeeds_.size();
+	return total / (instantaneousSpeeds.size()-1);
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////
 
-void Track::drawCuboid(Mat &outputFrame, Scalar color, int lineThickness)
+void Track::drawBlob(Mat &outputFrame)
+{
+	Blob blob = this->v_blobs.back();
+	rectangle(outputFrame, blob.getBoundingRect(), this->trackColor, 2, CV_AA);
+	circle(outputFrame, blob.getCenter(), 1, this->trackColor, -1, CV_AA);
+	/*vector<vector<Point>> contours;
+	contours.push_back(blob.getContour());
+	drawContours(outputFrame, contours, -1, BLUE, 1, CV_AA);*/
+
+	vector<Point2f> flowTails, flowHeads;
+	flowTails = blob.getFlowTails();
+	flowHeads = blob.getFlowHeads();
+	for (int i = 0; i < flowTails.size(); i++)
+	{
+		circle(outputFrame, flowTails[i], 1, RED, -1, CV_AA);
+		arrowedLine(outputFrame, flowTails[i], flowHeads[i], this->trackColor, 1, CV_AA);
+	}
+}
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+void Track::drawCuboid(Mat &outputFrame)
 {
 	Cuboid cuboid = v_cuboids.back();
-	vector<Point2f> imagePoints;
+	vector<Point2f> ipVertices = cuboid.getIPVertices();
 
-	projectPoints(cuboid.getVertices(), rotationVector, translationVector, cameraMatrix, distCoeffs, imagePoints);
+	line(outputFrame, ipVertices[0], ipVertices[1], this->trackColor, 2, CV_AA);
+	line(outputFrame, ipVertices[1], ipVertices[2], this->trackColor, 2, CV_AA);
+	line(outputFrame, ipVertices[2], ipVertices[3], this->trackColor, 2, CV_AA);
+	line(outputFrame, ipVertices[3], ipVertices[0], this->trackColor, 2, CV_AA);
+	line(outputFrame, ipVertices[4], ipVertices[5], this->trackColor, 2, CV_AA);
+	line(outputFrame, ipVertices[5], ipVertices[6], this->trackColor, 2, CV_AA);
+	line(outputFrame, ipVertices[6], ipVertices[7], this->trackColor, 2, CV_AA);
+	line(outputFrame, ipVertices[7], ipVertices[4], this->trackColor, 2, CV_AA);
+	line(outputFrame, ipVertices[0], ipVertices[4], this->trackColor, 2, CV_AA);
+	line(outputFrame, ipVertices[1], ipVertices[5], this->trackColor, 2, CV_AA);
+	line(outputFrame, ipVertices[2], ipVertices[6], this->trackColor, 2, CV_AA);
+	line(outputFrame, ipVertices[3], ipVertices[7], this->trackColor, 2, CV_AA);
 
-	line(outputFrame, imagePoints[0], imagePoints[1], color, lineThickness, CV_AA);
-	line(outputFrame, imagePoints[1], imagePoints[2], color, lineThickness, CV_AA);
-	line(outputFrame, imagePoints[2], imagePoints[3], color, lineThickness, CV_AA);
-	line(outputFrame, imagePoints[3], imagePoints[0], color, lineThickness, CV_AA);
-	line(outputFrame, imagePoints[4], imagePoints[5], color, lineThickness, CV_AA);
-	line(outputFrame, imagePoints[5], imagePoints[6], color, lineThickness, CV_AA);
-	line(outputFrame, imagePoints[6], imagePoints[7], color, lineThickness, CV_AA);
-	line(outputFrame, imagePoints[7], imagePoints[4], color, lineThickness, CV_AA);
-	line(outputFrame, imagePoints[0], imagePoints[4], color, lineThickness, CV_AA);
-	line(outputFrame, imagePoints[1], imagePoints[5], color, lineThickness, CV_AA);
-	line(outputFrame, imagePoints[2], imagePoints[6], color, lineThickness, CV_AA);
-	line(outputFrame, imagePoints[3], imagePoints[7], color, lineThickness, CV_AA);
+	vector<Point3f> objectPoints1, objectPoint2;
+	vector<Point2f> imagePoints1, imagePoints2;
 
-
-	putText(outputFrame, "L: " + to_string(this->optimizedCuboidLength), Point2f(imagePoints[0].x, imagePoints[0].y + 20), CV_FONT_HERSHEY_SIMPLEX, 0.3, WHITE, 1, CV_AA);
-
-
-	putText(outputFrame, "W: " + to_string(this->optimizedCuboidWidth), Point2f(imagePoints[0].x, imagePoints[0].y + 30), CV_FONT_HERSHEY_SIMPLEX, 0.3, WHITE, 1, CV_AA);
-
-	putText(outputFrame, "H: " + to_string(this->optimizedCuboidHeight), Point2f(imagePoints[0].x, imagePoints[0].y + 40), CV_FONT_HERSHEY_SIMPLEX, 0.3, WHITE, 1, CV_AA);
-
-	putText(outputFrame, "A: " + to_string(this->optimizedAngleOfMotion), Point2f(imagePoints[0].x, imagePoints[0].y + 50), CV_FONT_HERSHEY_SIMPLEX, 0.3, WHITE, 1, CV_AA);
-
-	putText(outputFrame, "M.X.: " + to_string(this->optimizedMotionX), Point2f(imagePoints[0].x, imagePoints[0].y + 60), CV_FONT_HERSHEY_SIMPLEX, 0.3, WHITE, 1, CV_AA);
-
-	putText(outputFrame, "M.Y.: " + to_string(this->optimizedMotionY), Point2f(imagePoints[0].x, imagePoints[0].y + 70), CV_FONT_HERSHEY_SIMPLEX, 0.3, WHITE, 1, CV_AA);
-
-	putText(outputFrame, "I.S.: " + to_string(this->instantaneousSpeeds_.back()), Point2f(imagePoints[0].x, imagePoints[0].y + 80), CV_FONT_HERSHEY_SIMPLEX, 0.3, WHITE, 1, CV_AA);
-
-	putText(outputFrame, "A.S.: " + to_string(this->findAverageSpeed()), Point2f(imagePoints[0].x, imagePoints[0].y + 90), CV_FONT_HERSHEY_SIMPLEX, 0.3, WHITE, 1, CV_AA);
-
-}
-void Track::drawBlobTrail(Mat &outputFrame, int trailLength, Scalar trailColor, int trailThickness)
-{
-	for (int i = 0; i < min((int)v_blobs.size(), trailLength); i++)
+	objectPoints1 = cuboid.getCP_Flows()[0];
+	objectPoint2 = cuboid.getCP_Flows()[1];
+	
+	projectPoints(objectPoints1, rotationVector, translationVector, cameraMatrix, distCoeffs, imagePoints1);
+	projectPoints(objectPoint2, rotationVector, translationVector, cameraMatrix, distCoeffs, imagePoints2);
+	for (int i = 0; i < imagePoints1.size(); i++)
 	{
-		line(outputFrame, v_blobs.rbegin()[i].getCenter(), v_blobs.rbegin()[i + 1].getCenter(), trailColor, trailThickness, CV_AA);
+		circle(outputFrame, imagePoints1[i], 1, RED, -1, CV_AA);
+		arrowedLine(outputFrame, imagePoints1[i], imagePoints2[i], this->trackColor, 1, CV_AA);
 	}
+	putText(outputFrame, "T No.: " + to_string(this->trackNumber), Point2f(ipVertices[0].x, ipVertices[0].y + 10), CV_FONT_HERSHEY_SIMPLEX, 0.3, WHITE, 1, CV_AA);
+
+	putText(outputFrame, "C No.: " + to_string(cuboid.getCuboidNumber()), Point2f(ipVertices[0].x, ipVertices[0].y + 20), CV_FONT_HERSHEY_SIMPLEX, 0.3, WHITE, 1, CV_AA);
+
+	putText(outputFrame, "L: " + to_string(this->optimizedCuboidLength), Point2f(ipVertices[0].x, ipVertices[0].y + 30), CV_FONT_HERSHEY_SIMPLEX, 0.3, WHITE, 1, CV_AA);
+
+	putText(outputFrame, "W: " + to_string(this->optimizedCuboidWidth), Point2f(ipVertices[0].x, ipVertices[0].y + 40), CV_FONT_HERSHEY_SIMPLEX, 0.3, WHITE, 1, CV_AA);
+
+	putText(outputFrame, "H: " + to_string(this->optimizedCuboidHeight), Point2f(ipVertices[0].x, ipVertices[0].y + 50), CV_FONT_HERSHEY_SIMPLEX, 0.3, WHITE, 1, CV_AA);
+
+	putText(outputFrame, "M.X.: " + to_string(this->optimizedMotionX), Point2f(ipVertices[0].x, ipVertices[0].y + 60), CV_FONT_HERSHEY_SIMPLEX, 0.3, WHITE, 1, CV_AA);
+
+	putText(outputFrame, "M.Y.: " + to_string(this->optimizedMotionY), Point2f(ipVertices[0].x, ipVertices[0].y + 70), CV_FONT_HERSHEY_SIMPLEX, 0.3, WHITE, 1, CV_AA);
+
+	putText(outputFrame, "I.S.: " + to_string(this->instantaneousSpeeds.back()), Point2f(ipVertices[0].x, ipVertices[0].y + 80), CV_FONT_HERSHEY_SIMPLEX, 0.3, WHITE, 1, CV_AA);
+
+	putText(outputFrame, "A.S.: " + to_string(this->findAverageSpeed()), Point2f(ipVertices[0].x, ipVertices[0].y + 90), CV_FONT_HERSHEY_SIMPLEX, 0.3, WHITE, 1, CV_AA);
+
 }
 
 
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-void Track::drawCuboidInfo(Mat &outputFrame, Scalar backgroundColor, int fontFace, Scalar fontColor, int fontThickness)
-{
-
-	Cuboid cuboid = this->v_cuboids.back();
-
-	vector<Point3f> objectPoints; vector<Point2f> imagePoints;
-	objectPoints = cuboid.getVertices();
-	projectPoints(objectPoints, rotationVector, translationVector, cameraMatrix, distCoeffs, imagePoints);
-
-	circle(outputFrame, imagePoints[0], 10, trackColor, -1, CV_AA);
-}
-
+////////////////////////////////////////////////////////////////////////////////////////////////
 
 Track::~Track() {};
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+////////////////////////////////////////////////////////////////////////////////////////////////
