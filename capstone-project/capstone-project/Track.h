@@ -12,7 +12,7 @@ private:
 	vector<Cuboid> v_cuboids;
 	float initialCuboidLength, initialCuboidWidth, initialCuboidHeight, initialMotionX, initialMotionY, optimizedCuboidLength, optimizedCuboidWidth, optimizedCuboidHeight, optimizedMotionX, optimizedMotionY;
 	Point3f nextPoint;
-	
+
 
 	vector<float> instantaneousSpeeds;
 	float averageSpeed;
@@ -49,8 +49,10 @@ public:
 	void setTrackNumber(int number) { this->trackNumber = number; }
 	float findAverageSpeed();
 
-	void Track::drawCuboid(Mat &outputFrame);
-	void Track::drawBlob(Mat &outputFrame);
+	void drawCuboid(Mat &outputFrame);
+	void drawBlob(Mat &outputFrame);
+	void drawFlows(Mat &outputFrame);
+
 };
 
 

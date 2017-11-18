@@ -15,7 +15,7 @@ using namespace cv;
 
 
 
-////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
 Track::Track(Blob &blob, int trackNumber)
 {
@@ -30,22 +30,22 @@ Track::Track(Blob &blob, int trackNumber)
 	blob.findFlows();
 	this->v_blobs.push_back(blob);
 
-	
 
-	this->initialCuboidLength = 5.0; //5.0;
-	this->initialCuboidWidth = 2.0; // 2.0;
-	this->initialCuboidHeight = 1.5; // 1.5;
+
+	this->initialCuboidLength = 5.0; //5.0
+	this->initialCuboidWidth = 2.0; //2.0
+	this->initialCuboidHeight = 1.5; //1.5
 
 	vector<Point2f> flowTails, flowHeads;
 	flowTails = blob.getFlowTails();
 	flowHeads = blob.getFlowHeads();
 
-	
+
 
 	vector<float> v_flowLengthX, v_flowLengthY;
 	float sum_flowLengthX = 0, sum_flowLengthY = 0;
 
-	
+
 
 	for (int i = 0; i < flowTails.size(); i++)
 	{
@@ -69,23 +69,21 @@ Track::Track(Blob &blob, int trackNumber)
 
 
 
-	float minLength = 1.3;
+	float minLength = 1.0; //1.3
 	float maxLength = 7.0;
 	float minWidth = 1.0;
 	float maxWidth = 3.0;
 	float minHeight = 1.0;
-	float maxHeight = 2.0;
+	float maxHeight = 3.0; //2.0
 	float minMotionX = v_flowLengthX[0];
 	float maxMotionX = v_flowLengthX.back();
 	float minMotionY = v_flowLengthY[0];
 	float maxMotionY = v_flowLengthY.back();
 
-	this->cuboidCount++;
-	optimizationData << "frame-number" << currentFrameCount;
-	optimizationData << "track-number" << this->trackNumber;
-	optimizationData << "cuboid-number" << cuboidCount;
-	optimizationData << "flow-tails" << flowTails;
-	optimizationData << "flow-heads" << flowHeads;
+	/*cout << "Frame Number: " << currentFrameCount << endl;
+	cout << "Track Number: " << this->trackNumber << endl;
+	cout << endl;*/
+
 
 	int n = 5;
 	VectorXf parameters(n);
@@ -116,6 +114,19 @@ Track::Track(Blob &blob, int trackNumber)
 
 	LevenbergMarquardt<LMFunctor, float> lm(functor);
 	int status = lm.minimize(parameters);
+	/*cout << "Length: " << parameters(0) << endl;
+	cout << "Width: " << parameters(1) << endl;
+	cout << "Height: " << parameters(2) << endl;
+	cout << "Motion in X: " << parameters(3) << endl;
+	cout << "Motion in Y: " << parameters(4) << endl;
+	cout << endl;
+	cout << "Checking for upper and lower bounds for parameters." << endl;
+	cout << "Max. Length: " << maxLength << " Min. Length: " << minLength << endl;
+	cout << "Max. Width: " << maxWidth << " Min. Width: " << minWidth << endl;
+	cout << "Max. Height: " << maxHeight << " Min. Height: " << minHeight << endl;
+	cout << "Max. Motion in X: " << maxMotionX << " Min. Motion in X: " << minMotionX << endl;
+	cout << "Max. Motion in Y: " << maxMotionY << " Min. Motion in Y: " << minMotionY << endl;
+	cout << endl;*/
 
 	if (parameters(0) < minLength) parameters(0) = minLength;
 	if (parameters(0) > maxLength) parameters(0) = maxLength;
@@ -134,47 +145,19 @@ Track::Track(Blob &blob, int trackNumber)
 	this->optimizedMotionX = parameters(3);
 	this->optimizedMotionY = parameters(4);
 
-
-	float sumErrors = 0;
-	for (int i = 0; i < lm.fvec.size(); i++)
-	{
-		sumErrors += pow(lm.fvec(i), 2);
-	}
-
-	optimizationData << "optimization-status" << status;
-
-	optimizationData << "initial-length" << this->initialCuboidLength;
-
-	optimizationData << "optimized-length" << this->optimizedCuboidLength;
-
-	optimizationData << "initial-width" << this->initialCuboidWidth;
-
-	optimizationData << "optimized-width" << this->optimizedCuboidWidth;
-
-	optimizationData << "initial-height" << this->initialCuboidHeight;
-
-	optimizationData << "optimized-height" << this->optimizedCuboidHeight;
-
-	optimizationData << "initial-motion-x" << this->initialMotionX;
-
-	optimizationData << "optimized-motion-x" << this->optimizedMotionX;
-
-	optimizationData << "initial-motion-y" << this->initialMotionY;
-
-	optimizationData << "optimized_motion-y" << this->optimizedMotionY;
-
-	optimizationData << "sum-of-squared-errors" << sumErrors;
-
-
-
-
+	/*cout << "Final Optimized Parameters." << endl;
+	cout << "Optimized Length: " << this->optimizedCuboidLength << endl;
+	cout << "Optimized Width: " << this->optimizedCuboidWidth << endl;
+	cout << "Optimized Height: " << this->optimizedCuboidHeight << endl;
+	cout << "Optimized Motion in X: " << this->optimizedMotionX << endl;
+	cout << "Optimized Motion in Y: " << this->optimizedMotionY << endl;
+	cout << "------------------------------------------------------------------------------" << endl;
+	cout << endl;*/
 
 	Cuboid cuboid(point, this->optimizedCuboidLength, this->optimizedCuboidWidth, this->optimizedCuboidHeight, atan(this->optimizedMotionX / this->optimizedMotionY));
-	cuboid.findFlowsOnPlanes(flowTails, flowHeads);
-	cuboid.setCuboidNumber(matchCount);
-	
+
 	this->v_cuboids.push_back(cuboid);
-	
+
 
 	Point3f point2(point.x + this->optimizedMotionX, point.y + this->optimizedMotionY, 0.0);
 	this->nextPoint = point2;
@@ -238,12 +221,10 @@ void Track::add(Blob &blob)
 	float minMotionY = v_flowLengthY[0];
 	float maxMotionY = v_flowLengthY.back();
 
-	this->cuboidCount++;
-	optimizationData << "frame-number" << currentFrameCount;
-	optimizationData << "track-number" << this->trackNumber;
-	optimizationData << "cuboid-number" << cuboidCount;
-	optimizationData << "flow-tails" << flowTails;
-	optimizationData << "flow-heads" << flowHeads;
+
+	/*cout << "Frame Number: " << currentFrameCount << endl;
+	cout << "Track Number: " << this->trackNumber << endl;
+	cout << endl;*/
 
 	int n = 5;
 	VectorXf parameters(n);
@@ -276,6 +257,20 @@ void Track::add(Blob &blob)
 	LevenbergMarquardt<LMFunctor, float> lm(functor);
 	int status = lm.minimize(parameters);
 
+	/*cout << "Length: " << parameters(0) << endl;
+	cout << "Width: " << parameters(1) << endl;
+	cout << "Height: " << parameters(2) << endl;
+	cout << "Motion in X: " << parameters(3) << endl;
+	cout << "Motion in Y: " << parameters(4) << endl;
+	cout << endl;
+	cout << "Checking for upper and lower bounds for parameters." << endl;
+	cout << "Max. Length: " << maxLength << " Min. Length: " << minLength << endl;
+	cout << "Max. Width: " << maxWidth << " Min. Width: " << minWidth << endl;
+	cout << "Max. Height: " << maxHeight << " Min. Height: " << minHeight << endl;
+	cout << "Max. Motion in X: " << maxMotionX << " Min. Motion in X: " << minMotionX << endl;
+	cout << "Max. Motion in Y: " << maxMotionY << " Min. Motion in Y: " << minMotionY << endl;
+	cout << endl;*/
+
 	if (parameters(0) < minLength) parameters(0) = minLength;
 	if (parameters(0) > maxLength) parameters(0) = maxLength;
 	if (parameters(1) < minWidth) parameters(1) = minWidth;
@@ -293,43 +288,18 @@ void Track::add(Blob &blob)
 	this->optimizedMotionX = parameters(3);
 	this->optimizedMotionY = parameters(4);
 
-	float sumErrors = 0;
-	for (int i = 0; i < lm.fvec.size(); i++)
-	{
-		sumErrors += pow(lm.fvec(i), 2);
-	}
+	/*cout << "Final Optimized Parameters." << endl;
+	cout << "Optimized Length: " << this->optimizedCuboidLength << endl;
+	cout << "Optimized Width: " << this->optimizedCuboidWidth << endl;
+	cout << "Optimized Height: " << this->optimizedCuboidHeight << endl;
+	cout << "Optimized Motion in X: " << this->optimizedMotionX << endl;
+	cout << "Optimized Motion in Y: " << this->optimizedMotionY << endl;
+	cout << "------------------------------------------------------------------------------" << endl;
+	cout << endl;*/
 
-
-
-	optimizationData << "optimization-status" << status;
-
-	optimizationData << "initial-length" << this->initialCuboidLength;
-
-	optimizationData << "optimized-length" << this->optimizedCuboidLength;
-
-	optimizationData << "initial-width" << this->initialCuboidWidth;
-
-	optimizationData << "optimized-width" << this->optimizedCuboidWidth;
-
-	optimizationData << "initial-height" << this->initialCuboidHeight;
-
-	optimizationData << "optimized-height" << this->optimizedCuboidHeight;
-
-	optimizationData << "initial-motion-x"<< this->initialMotionX;
-
-	optimizationData << "optimized-motion-x"<< this->optimizedMotionX;
-
-	optimizationData << "initial-motion-y" << this->initialMotionY;
-
-	optimizationData << "optimized-motion-y"<< this->optimizedMotionY;
-
-	optimizationData << "sum-of-squared-errors" << sumErrors;
-	
 	Cuboid cuboid(point, this->optimizedCuboidLength, this->optimizedCuboidWidth, this->optimizedCuboidHeight, atan(this->optimizedMotionX / this->optimizedMotionY));
-	cuboid.setCuboidNumber(matchCount);
-	cuboid.findFlowsOnPlanes(flowTails, flowHeads);
 	this->v_cuboids.push_back(cuboid);
-	
+
 
 	Point3f point2(point.x + this->optimizedMotionX, point.y + this->optimizedMotionY, 0.0);
 	this->nextPoint = point2;
@@ -350,7 +320,7 @@ float Track::findAverageSpeed()
 	{
 		total += instantaneousSpeeds[i];
 	}
-	return total / (instantaneousSpeeds.size()-1);
+	return total / (instantaneousSpeeds.size() - 1);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -360,10 +330,19 @@ void Track::drawBlob(Mat &outputFrame)
 	Blob blob = this->v_blobs.back();
 	rectangle(outputFrame, blob.getBoundingRect(), this->trackColor, 2, CV_AA);
 	circle(outputFrame, blob.getCenter(), 1, this->trackColor, -1, CV_AA);
-	/*vector<vector<Point>> contours;
-	contours.push_back(blob.getContour());
-	drawContours(outputFrame, contours, -1, BLUE, 1, CV_AA);*/
 
+	vector<vector<Point>> contours;
+	contours.push_back(blob.getContour());
+	drawContours(outputFrame, contours, -1, BLUE, 1, CV_AA);
+
+	rectangle(outputFrame, Point(blob.getBoundingRect().x - 1, blob.getBoundingRect().y - 15), Point(blob.getBoundingRect().x + blob.getWidth(), blob.getBoundingRect().y), this->trackColor, -1, CV_AA);
+	putText(outputFrame, "Track: " + to_string(this->trackNumber), Point(blob.getBoundingRect().x + 3, blob.getBoundingRect().y - 3), CV_FONT_HERSHEY_SIMPLEX, 0.3, WHITE, 1, CV_AA);
+}
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+void Track::drawFlows(Mat &outputFrame)
+{
+	Blob blob = this->v_blobs.back();
 	vector<Point2f> flowTails, flowHeads;
 	flowTails = blob.getFlowTails();
 	flowHeads = blob.getFlowHeads();
@@ -372,8 +351,10 @@ void Track::drawBlob(Mat &outputFrame)
 		circle(outputFrame, flowTails[i], 1, RED, -1, CV_AA);
 		arrowedLine(outputFrame, flowTails[i], flowHeads[i], this->trackColor, 1, CV_AA);
 	}
+
 }
-////////////////////////////////////////////////////////////////////////////////////////////////
+
+/////////////////////////////////////////////////////////////////////////////////////////////////
 
 void Track::drawCuboid(Mat &outputFrame)
 {
@@ -393,22 +374,12 @@ void Track::drawCuboid(Mat &outputFrame)
 	line(outputFrame, ipVertices[2], ipVertices[6], this->trackColor, 2, CV_AA);
 	line(outputFrame, ipVertices[3], ipVertices[7], this->trackColor, 2, CV_AA);
 
-	vector<Point3f> objectPoints1, objectPoint2;
-	vector<Point2f> imagePoints1, imagePoints2;
+	rectangle(outputFrame, Point((ipVertices[0].x + ipVertices[3].x) / 2 - 10, (ipVertices[0].y + ipVertices[4].y) / 2 - 5), Point((ipVertices[0].x + ipVertices[3].x) / 2 + 10, (ipVertices[0].y + ipVertices[4].y) / 2 + 5), this->trackColor, -1, CV_AA);
 
-	objectPoints1 = cuboid.getCP_Flows()[0];
-	objectPoint2 = cuboid.getCP_Flows()[1];
-	
-	projectPoints(objectPoints1, rotationVector, translationVector, cameraMatrix, distCoeffs, imagePoints1);
-	projectPoints(objectPoint2, rotationVector, translationVector, cameraMatrix, distCoeffs, imagePoints2);
-	for (int i = 0; i < imagePoints1.size(); i++)
-	{
-		circle(outputFrame, imagePoints1[i], 1, RED, -1, CV_AA);
-		arrowedLine(outputFrame, imagePoints1[i], imagePoints2[i], this->trackColor, 1, CV_AA);
-	}
-	putText(outputFrame, "T No.: " + to_string(this->trackNumber), Point2f(ipVertices[0].x, ipVertices[0].y + 10), CV_FONT_HERSHEY_SIMPLEX, 0.3, WHITE, 1, CV_AA);
 
-	putText(outputFrame, "C No.: " + to_string(cuboid.getCuboidNumber()), Point2f(ipVertices[0].x, ipVertices[0].y + 20), CV_FONT_HERSHEY_SIMPLEX, 0.3, WHITE, 1, CV_AA);
+	putText(outputFrame, to_string(this->trackNumber), Point2f((ipVertices[0].x + ipVertices[3].x) / 2 - 8, (ipVertices[0].y + ipVertices[4].y) / 2 + 3), CV_FONT_HERSHEY_SIMPLEX, 0.3, WHITE, 1, CV_AA);
+
+	putText(outputFrame, "T. No.: " + to_string(this->trackNumber), Point2f(ipVertices[0].x, ipVertices[0].y + 10), CV_FONT_HERSHEY_SIMPLEX, 0.3, WHITE, 1, CV_AA);
 
 	putText(outputFrame, "L: " + to_string(this->optimizedCuboidLength), Point2f(ipVertices[0].x, ipVertices[0].y + 30), CV_FONT_HERSHEY_SIMPLEX, 0.3, WHITE, 1, CV_AA);
 

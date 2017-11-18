@@ -38,7 +38,8 @@ int main(void)
 	cout << "Rotation Vector" << endl << rotationVector << endl; cout << endl;
 	cout << "Translation Vector: " << endl << translationVector << endl; cout << endl;
 	cout << "Rotation Matrix: " << endl << rotationMatrix << endl; cout << endl;
-
+	cout << "------------------------------------------------------------------------------" << endl;
+	cout << endl;
 
 	VideoCapture capture;
 	capture.open("traffic_chiangrak2.MOV");
@@ -56,11 +57,13 @@ int main(void)
 	frameWidth = capture.get(CV_CAP_PROP_FRAME_WIDTH);
 	fourCC = capture.get(CV_CAP_PROP_FOURCC);
 
-	cout << "Video frame rate: " << frameRate << endl;
-	cout << "Video total frame count: " << totalFrameCount << endl;
-	cout << "Video frame height: " << frameHeight << endl;
-	cout << "Video frame width: " << frameWidth << endl;
-	cout << "Video Codec: " << fourCC << endl;
+	cout << "Video frame rate: " << frameRate << endl; cout << endl;
+	cout << "Video total frame count: " << totalFrameCount << endl; cout << endl;
+	cout << "Video frame height: " << frameHeight << endl; cout << endl;
+	cout << "Video frame width: " << frameWidth << endl; cout << endl;
+	cout << "Video Codec: " << fourCC << endl; cout << endl;
+	cout << "------------------------------------------------------------------------------" << endl;
+	cout << endl;
 
 	capture.read(currentFrame);
 	capture.read(nextFrame);
@@ -83,7 +86,7 @@ int main(void)
 		currentFrameCount = capture.get(CV_CAP_PROP_POS_FRAMES) - 1;
 
 		if (currentFrameCount == totalFrameCount) break;
-		
+
 		videoTimeElapsed = capture.get(CV_CAP_PROP_POS_MSEC) / 1000;
 
 
@@ -110,10 +113,10 @@ int main(void)
 			erode(morph, morph, getStructuringElement(MORPH_RECT, Size(5, 5)));
 		}
 
-		
+
 		vector<vector<Point> > contours;
 		findContours(morph, contours, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
-		
+
 		Mat img_contours(frameHeight, frameWidth, CV_8UC3);
 		drawContours(img_contours, contours, -1, WHITE, 1, CV_AA);
 
@@ -160,16 +163,20 @@ int main(void)
 
 		for (int i = 0; i < tracks.size(); i++)
 		{
-			if (tracks[i].getNoMatchCount() < 5 /*&& tracks[i].getMatchCount() >= 15*/)
+			if (currentFrameCount <= 5 || tracks[i].getNoMatchCount() < 5 && tracks[i].getMatchCount() > 5)
 			{
 				Blob blob = tracks[i].getLastBlob();
 				Cuboid cuboid = tracks[i].getLastCuboid();
 
+				tracks[i].drawFlows(imgBlobs);
 				tracks[i].drawBlob(imgBlobs);
+
+				tracks[i].drawFlows(imgCuboids);
 				tracks[i].drawCuboid(imgCuboids);
 
+
 			}
-			if (tracks[i].getMatchCount() == 15)
+			if (tracks[i].getMatchCount() == 5)
 			{
 				vehicleCount++;
 			}
@@ -184,7 +191,7 @@ int main(void)
 			}
 			if (tracks[i].isBeingTracked() == false)
 			{
-				
+
 				tracks.erase(tracks.begin() + i);
 			}
 		}
@@ -225,7 +232,7 @@ int main(void)
 		currentFrame = nextFrame.clone();
 		capture.read(nextFrame);
 
-		key = waitKey(/*1000 / frameRate*/ 0);
+		key = waitKey(1000 / frameRate/* 0*/);
 		if (key == 32)
 		{
 			imwrite("original-frame" + to_string(currentFrameCount) + ".jpg", currentFrame);
@@ -240,7 +247,6 @@ int main(void)
 			imwrite("blobs-frame" + to_string(currentFrameCount) + ".jpg", imgBlobs);
 		}
 	}
-	optimizationData.release();
 	return 0;
 }
 
@@ -282,7 +288,7 @@ void matchBlobs(vector<Blob> &blobs)
 		{
 			tracks[index_leastDistance].add(blobs[i]);
 		}
-		
+
 		else
 		{
 			trackCount++;
@@ -306,6 +312,6 @@ void displayInfo(Mat &outputFrame, Scalar backgroundColor, int fontFace, double 
 	rectangle(outputFrame, Point(8, 45), Point(180, 60), backgroundColor, -1, CV_AA);
 	rectangle(outputFrame, Point(8, 45), Point(180, 60), fontColor, 1, CV_AA);
 	putText(outputFrame, "Being Tracked: " + to_string(tracks.size()), Point(10, 57), fontFace, fontScale, fontColor, 0.35, CV_AA);
-	
+
 	/*putText(outputFrame, "Vehicle Speed Estimation Using Optical Flow And 3D Modeling by Indrajeet Datta", Point(5, outputFrame.rows - 10), fontFace, 0.3, WHITE, fontScale, CV_AA);*/
 }

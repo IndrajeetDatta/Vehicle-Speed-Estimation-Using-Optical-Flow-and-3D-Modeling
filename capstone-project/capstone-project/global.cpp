@@ -17,7 +17,6 @@ const Scalar WHITE = Scalar(255, 255, 255), BLACK = Scalar(0, 0, 0), BLUE = Scal
 Mat currentFrame, nextFrame, currentFrame_gray, nextFrame_gray, currentFrame_blur, nextFrame_blur, morph, diff, thresh, videoMask, imgCuboids, imgTracks;
 
 const Point3f cameraCenter = Point3f(1.80915, -8.95743, 8.52165);
-FileStorage optimizationData("optimizationData.yml", FileStorage::WRITE);
 
 const float initialCuboidLength = 5, initialCuboidWidth = 2, initialCuboidHeight = 1.5;
 
@@ -110,7 +109,7 @@ bool pointInsideRect(vector<Point3f> points, Point3f point)
 	Vec3f v2m_norm = v2m / v2m_length;
 	Vec3f v3m_norm = v3m / v3m_length;
 	Vec3f v4m_norm = v4m / v4m_length;
-	
+
 	float dot1 = v12_norm.dot(v1m_norm);
 	float dot2 = v23_norm.dot(v2m_norm);
 	float dot3 = v34_norm.dot(v3m_norm);

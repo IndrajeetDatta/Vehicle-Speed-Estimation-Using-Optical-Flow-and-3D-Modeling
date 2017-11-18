@@ -150,49 +150,6 @@ Cuboid::Cuboid(Point3f point, float length, float width, float height, float ori
 	this->v_planeParameters.push_back(backPlaneParameters);
 }
 
-
-void Cuboid::findFlowsOnPlanes(vector<Point2f> flowTails, vector<Point2f> flowHeads)
-{
-	vector<Point3f> cp_flowTails, cp_flowHeads;
-
-	for (int i = 0; i < flowTails.size(); i++)
-	{
-		Point3f gp_ft = findWorldPoint(flowTails[i], 0, cameraMatrix, rotationMatrix, translationVector);
-		Point3f gp_fh = findWorldPoint(flowHeads[i], 0, cameraMatrix, rotationMatrix, translationVector);
-
-		float smallestDistance = 10000; Point3f cp_ft, cp_fh;
-		for (int j = 0; j < v_planeParameters.size(); j++)
-		{
-			float t1 = -(this->v_planeParameters[j][0] * cameraCenter.x + this->v_planeParameters[j][1] * cameraCenter.y + this->v_planeParameters[j][2] * cameraCenter.z + this->v_planeParameters[j][3]) / (this->v_planeParameters[j][0] * (gp_ft.x - cameraCenter.x) + this->v_planeParameters[j][1] * (gp_ft.y - cameraCenter.y) + this->v_planeParameters[j][2] * (gp_ft.z - cameraCenter.z));
-
-			Point3f point1(cameraCenter.x + ((gp_ft.x - cameraCenter.x) * t1), cameraCenter.y + ((gp_ft.y - cameraCenter.y) * t1), cameraCenter.z + ((gp_ft.z - cameraCenter.z) * t1));
-			
-			float t2 = -(this->v_planeParameters[j][0] * cameraCenter.x + this->v_planeParameters[j][1] * cameraCenter.y + this->v_planeParameters[j][2] * cameraCenter.z + this->v_planeParameters[j][3]) / (this->v_planeParameters[j][0] * (gp_fh.x - cameraCenter.x) + this->v_planeParameters[j][1] * (gp_fh.y - cameraCenter.y) + this->v_planeParameters[j][2] * (gp_fh.z - cameraCenter.z));
-
-			Point3f point2(cameraCenter.x + ((gp_fh.x - cameraCenter.x) * t2), cameraCenter.y + ((gp_fh.y - cameraCenter.y) * t2), cameraCenter.z + ((gp_fh.z - cameraCenter.z) * t2));
-	
-			bool inside = pointInsideRect(this->v_planeVertices[j], point1) && pointInsideRect(this->v_planeVertices[j], point2);
-
-			if (inside)
-			{
-				float distance = (distanceBetweenPoints(point1, cameraCenter) + distanceBetweenPoints(point2, cameraCenter)) / 2;
-				if (distance < smallestDistance)
-				{
-
-					cp_ft = point1;
-					cp_fh = point2;
-					smallestDistance = distance;
-				}
-			}
-		}
-
-		cp_flowTails.push_back(cp_ft);
-		cp_flowHeads.push_back(cp_fh);
-	}
-	this->v_cp_flows.push_back(cp_flowTails);
-	this->v_cp_flows.push_back(cp_flowHeads);
-}
-
 Cuboid::Cuboid() {};
 Cuboid::~Cuboid() {};
 

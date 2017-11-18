@@ -19,8 +19,6 @@ extern const Point3f cameraCenter;
 
 extern const float initialCuboidLength, initialCuboidWidth, initialCuboidHeight;
 
-extern FileStorage optimizationData;
-
 Point3f findWorldPoint(const Point2f &imagePoint, double zConst, const Mat &cameraMatrix, const Mat &rotationMatrix, const Mat &translationVector);
 
 float distanceBetweenPoints(Point2f point1, Point2f point2);

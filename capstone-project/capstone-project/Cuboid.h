@@ -4,7 +4,6 @@ class Cuboid
 {
 private:
 
-	int cuboidNumber = 0;
 	float length, width, height, orientation;
 	Point3f centroid;
 	vector<Point3f> v_vertices;
@@ -20,7 +19,6 @@ public:
 	Cuboid();
 	~Cuboid();
 
-	int getCuboidNumber() const { return this->cuboidNumber; }
 	float getLength() const { return this->length; }
 	float getWidth() const { return this->width; }
 	float getHeight() const { return this->height; }
@@ -31,11 +29,6 @@ public:
 	vector<Point2f> getIPVertices() const { return this->v_ipVertices; }
 	vector<Point2f> getConvexHull() const { return this->v_convexHull; }
 	vector<vector<float>> getPlaneParameters() const { return this->v_planeParameters; }
-	vector <vector<Point3f>> getCP_Flows() const { return this->v_cp_flows; }
-	
-	void setCuboidNumber(int number) { this->cuboidNumber = number; }
-	void Cuboid::findFlowsOnPlanes(vector<Point2f> flowTails, vector<Point2f> flowHeads);
-
 };
 
 

@@ -17,8 +17,6 @@ public:
 	Blob(const vector<Point> &contour);
 	~Blob();
 
-	//getter functions
-
 	vector<Point> getContour() const { return this->contour; }
 	Rect getBoundingRect() const { return this->boundingRectangle; }
 	float getArea() const { return this->area; }
@@ -35,7 +33,7 @@ public:
 
 	void setFlowTails(vector<Point2f> flowTails) { this->v_flowTails = flowTails; }
 
-	
+
 
 };
 

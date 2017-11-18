@@ -34,7 +34,7 @@ struct LMFunctor
 		float param_motionX = x(3);
 		float param_motionY = x(4);
 
-		/*if (param_length < minLength) param_length = minLength;
+		if (param_length < minLength) param_length = minLength;
 		if (param_length > maxLength) param_length = maxLength;
 		if (param_width < minWidth) param_width = minWidth;
 		if (param_width > maxWidth) param_width = maxWidth;
@@ -43,14 +43,8 @@ struct LMFunctor
 		if (param_motionX < minMotionX) param_motionX = minMotionX;
 		if (param_motionX > maxMotionX) param_motionX = maxMotionX;
 		if (param_motionY < minMotionY) param_motionY = minMotionY;
-		if (param_motionY > maxMotionY) param_motionY = maxMotionY;*/
+		if (param_motionY > maxMotionY) param_motionY = maxMotionY;
 
-		/*optimizationData << "param_length"  << param_length;
-		optimizationData << "param_width" << param_width; 
-		optimizationData << "param_height" << param_height; 
-		optimizationData << "param_motion_x" << param_motionX; 
-		optimizationData << "param_motion_y" << param_motionY;
-*/
 		Cuboid cuboid(point, param_length, param_width, param_height, atan(param_motionX / param_motionY));
 		vector<vector<float>> v_planeParameters = cuboid.getPlaneParameters();
 		vector<vector<Point3f>> v_planeVertices = cuboid.getPlaneVertices();
@@ -64,20 +58,19 @@ struct LMFunctor
 			float smallestDistance = 10000; Point3f cp_ft, cp_fh;
 			for (int j = 0; j < v_planeParameters.size(); j++)
 			{
-				float t1 = -(v_planeParameters[j][0] * cameraCenter.x + v_planeParameters[j][1] * cameraCenter.y + v_planeParameters[j][2] * cameraCenter.z + v_planeParameters[j][3]) / (v_planeParameters[j][0] * (gp_ft.x - cameraCenter.x) + v_planeParameters[j][1] * (gp_ft.y - cameraCenter.y) + v_planeParameters[j][2] * (gp_ft.z - cameraCenter.z));
+				float t = -(v_planeParameters[j][0] * cameraCenter.x + v_planeParameters[j][1] * cameraCenter.y + v_planeParameters[j][2] * cameraCenter.z + v_planeParameters[j][3]) / (v_planeParameters[j][0] * (gp_ft.x - cameraCenter.x) + v_planeParameters[j][1] * (gp_ft.y - cameraCenter.y) + v_planeParameters[j][2] * (gp_ft.z - cameraCenter.z));
 
-				Point3f point1(cameraCenter.x + ((gp_ft.x - cameraCenter.x) * t1), cameraCenter.y + ((gp_ft.y - cameraCenter.y) * t1), cameraCenter.z + ((gp_ft.z - cameraCenter.z) * t1));
+				Point3f point(cameraCenter.x + ((gp_ft.x - cameraCenter.x) * t), cameraCenter.y + ((gp_ft.y - cameraCenter.y) * t), cameraCenter.z + ((gp_ft.z - cameraCenter.z) * t));
 
-				bool inside = pointInsideRect(v_planeVertices[j], point1);
+				bool inside = pointInsideRect(v_planeVertices[j], point);
 
 				if (inside)
 				{
 					pointFound = true;
-					float distance = distanceBetweenPoints(point1, cameraCenter);
+					float distance = distanceBetweenPoints(point, cameraCenter);
 					if (distance < smallestDistance)
 					{
-
-						cp_ft = point1;
+						cp_ft = point;
 						smallestDistance = distance;
 					}
 				}
@@ -113,30 +106,18 @@ struct LMFunctor
 				}
 				else
 				{
-					fvec(i) = error2;  
+					fvec(i) = error2;
 				}
 
 			}
 		}
-
-
-		/*vector<float> errors;
-		float sumErrors = 0;
-		for (int i = 0; i < fvec.size(); i++)
-		{
-			sumErrors += pow(fvec(i), 2);
-			errors.push_back(fvec(i));
-		}
-		optimizationData << "error_vector" << errors;
-		optimizationData << "sum_of_errors" << sumErrors;*/
 		return 0;
 	}
 
 	int df(const VectorXf &x, MatrixXf &fjac) const
 	{
-
 		float epsilon;
-		epsilon = 1e-5f;
+		epsilon = 1e-2f;
 
 		for (int i = 0; i < x.size(); i++)
 		{
@@ -157,39 +138,30 @@ struct LMFunctor
 
 			VectorXf fjacBlock(values());
 			fjacBlock = fvecDiff / (2.0f * epsilon);
-
 			fjac.block(0, i, values(), 1) = fjacBlock;
 		}
 
 		VectorXf err(values());
 		operator()(x, err);
 
-		vector<float> errors; float sum = 0;
+		float sum = 0;
 		for (int i = 0; i < err.size(); i++)
 		{
-			errors.push_back(err(i));
 			sum += pow(err(i), 2);
 		}
-		/// Check here. Try to put jacbian in cv::Mat
-		Mat jacobian(fjac.cols, fjac.rows, cv::DataType<float>::type);
-		
-		for (int i = 0; i < fjac.rows(); i++)
-		{
-			for (int j = 0; j < fjac.cols(); j++)
-			{
-				float value = fjac(i, j);
-				jacobian.at<float>(i, j) = value;
-			}
-		}
-		cout << "Jacobian: " << jacobian << endl;
-		optimizationData << "param-length" << x(0);
-		optimizationData << "param-width" << x(1);
-		optimizationData << "param-height" << x(2);
-		optimizationData << "param-motion-x" << x(3);
-		optimizationData << "param-motion-y" << x(4);
-		optimizationData << "Errors" << errors;
-		optimizationData << "Sum-of-squared-errors" << sum;
-		//optimizationData << "Jacobian" << jacobian;
+
+		/*cout << "Length: " << x(0) << endl;
+		cout << "Width: " << x(1)  << endl;
+		cout << "Height: " << x(2) << endl;
+		cout << "Motion in X: " << x(3) << endl;
+		cout << "Motion in Y: " <<  x(4) << endl;
+		cout << "Sum of Squared Errors: " << sum << endl;
+		cout << endl;
+		cout << "Errors: " << endl << err << endl;
+		cout << endl;
+		cout << "Jacobian: " << endl << fjac << endl;
+		cout << endl;*/
+
 		return 0;
 	}
 
