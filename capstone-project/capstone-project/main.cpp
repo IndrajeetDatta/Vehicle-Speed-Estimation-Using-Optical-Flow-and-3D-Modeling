@@ -26,12 +26,16 @@ int main(void)
 
 	cout << "Vehicle Speed Estimation Using Optical Flow And 3D Modeling by Indrajeet Datta" << endl; cout << endl;
 
+	// Obtaining intrinsic parameters from .yml file.
+
 	FileStorage fs("parameters.yml", FileStorage::READ);
 	fs["Camera Matrix"] >> cameraMatrix;
 	fs["Distortion Coefficients"] >> distCoeffs;
 	fs["Rotation Vector"] >> rotationVector;
 	fs["Translation Vector"] >> translationVector;;
 	fs["Rotation Matrix"] >> rotationMatrix;
+
+	// Printing out the intrinsic parameters.
 
 	cout << "Camera Matrix: " << endl << cameraMatrix << endl; cout << endl;
 	cout << "Distortion Coefficients: " << endl << distCoeffs << endl; cout << endl;
@@ -40,6 +44,8 @@ int main(void)
 	cout << "Rotation Matrix: " << endl << rotationMatrix << endl; cout << endl;
 	cout << "------------------------------------------------------------------------------" << endl;
 	cout << endl;
+
+	// Opening video.
 
 	VideoCapture capture;
 	capture.open("traffic_chiangrak2.MOV");
@@ -51,11 +57,15 @@ int main(void)
 		return -1;
 	}
 
+	// Getting video properties.
+
 	frameRate = capture.get(CV_CAP_PROP_FPS);
 	totalFrameCount = capture.get(CV_CAP_PROP_FRAME_COUNT);
 	frameHeight = capture.get(CV_CAP_PROP_FRAME_HEIGHT);
 	frameWidth = capture.get(CV_CAP_PROP_FRAME_WIDTH);
 	fourCC = capture.get(CV_CAP_PROP_FOURCC);
+
+	// Printing out video properties.
 
 	cout << "Video frame rate: " << frameRate << endl; cout << endl;
 	cout << "Video total frame count: " << totalFrameCount << endl; cout << endl;
@@ -65,8 +75,12 @@ int main(void)
 	cout << "------------------------------------------------------------------------------" << endl;
 	cout << endl;
 
+	// Reading the first two frames of the video.
+
 	capture.read(currentFrame);
 	capture.read(nextFrame);
+
+	// Creating a mask to mask out the opposite traffic flow.
 
 	Mat mask(frameHeight, frameWidth, CV_8UC1, Scalar(1, 1, 1));
 	Point mask_points[1][3];
@@ -79,33 +93,33 @@ int main(void)
 
 	int key = 0;
 
-	time_t startTime = time(0);
-
+	// Starting the loop to loop through each frame of the video.
 	while (capture.isOpened() && key != 27)
 	{
+		// Getting the current frame count.
 		currentFrameCount = capture.get(CV_CAP_PROP_POS_FRAMES) - 1;
 
+		// If the video reaches the end, break out of the loop.
 		if (currentFrameCount == totalFrameCount) break;
 
-		videoTimeElapsed = capture.get(CV_CAP_PROP_POS_MSEC) / 1000;
-
-
+		// Converting the two frames obtained to black and white.
 		cvtColor(currentFrame, currentFrame_gray, CV_BGR2GRAY);
 		cvtColor(nextFrame, nextFrame_gray, CV_BGR2GRAY);
 
-
+		// Using gaussian blur on the grayscale images reduce noise.
 		GaussianBlur(currentFrame_gray, currentFrame_blur, Size(5, 5), 0);
 		GaussianBlur(nextFrame_gray, nextFrame_blur, Size(5, 5), 0);
 
-
+		// Finding the absolute difference.
 		absdiff(currentFrame_blur, nextFrame_blur, diff);
 
-
+		// Thresholding the difference frame.
 		threshold(diff, thresh, 30, 255.0, CV_THRESH_BINARY);
 
-
+		// Putting the mask created earlier on the thresholded image.
 		morph = thresh.clone().mul(mask);
 
+		// Implementing morphological operations on the threholded image.
 		for (int i = 0; i < 3; i++)
 		{
 			dilate(morph, morph, getStructuringElement(MORPH_RECT, Size(5, 5)));
@@ -113,22 +127,22 @@ int main(void)
 			erode(morph, morph, getStructuringElement(MORPH_RECT, Size(5, 5)));
 		}
 
-
+		// Finding the contours on the foreground blobs.
 		vector<vector<Point> > contours;
 		findContours(morph, contours, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
-
 		Mat img_contours(frameHeight, frameWidth, CV_8UC3);
 		drawContours(img_contours, contours, -1, WHITE, 1, CV_AA);
 
+		// Finding the convex hulls of the contours obtained.
 		vector<vector<Point>> convexHulls(contours.size());
 		for (int i = 0; i < contours.size(); i++)
 		{
 			convexHull(contours[i], convexHulls[i]);
 		}
-
 		Mat img_convexHulls(frameHeight, frameWidth, CV_8UC3);
 		drawContours(img_convexHulls, convexHulls, -1, WHITE, 1, CV_AA);
 
+		// Pushing the foreground blobs into a vector of Blob objects.
 		vector<Blob> currentFrameBlobs;
 		for (int i = 0; i < convexHulls.size(); i++)
 		{
@@ -144,6 +158,7 @@ int main(void)
 			}
 		}
 
+		// If it is the first frame of the video, pushing all into separate Track objects.
 		if (currentFrameCount == 1)
 		{
 			for (int i = 0; i < currentFrameBlobs.size(); i++)
@@ -153,16 +168,20 @@ int main(void)
 				tracks.push_back(track);
 			}
 		}
+
+		// If it is not the first frame of the video, implement the matching algorithm.
 		else
 		{
 			matchBlobs(currentFrameBlobs);
 		}
 
+		// Drawing the blobs and the cuboids on the current frame.
 		Mat imgBlobs = currentFrame.clone();
 		Mat imgCuboids = currentFrame.clone();
 
 		for (int i = 0; i < tracks.size(); i++)
 		{
+			// Only draw if the match count is greater than 5 and no match count is less than 5 or if it is first 5 frames of the video.
 			if (currentFrameCount <= 5 || tracks[i].getNoMatchCount() < 5 && tracks[i].getMatchCount() > 5)
 			{
 				Blob blob = tracks[i].getLastBlob();
@@ -178,33 +197,39 @@ int main(void)
 			}
 			if (tracks[i].getMatchCount() == 5)
 			{
+				// If match count for a track reaches 5, consider it a vehicle and increase vehicle count.
 				vehicleCount++;
 			}
 			if (tracks[i].isTrackUpdated() == false)
 			{
+				// If the track is not updated, increment no match count.
 				tracks[i].incrementNoMatchCount();
 			}
 
 			if (tracks[i].getNoMatchCount() > 15)
 			{
+				// If the track has not been updated for 15 consecutive frames, set it as "not tracking".
 				tracks[i].setBoolBeingTracked(false);
 			}
 			if (tracks[i].isBeingTracked() == false)
 			{
-
+				// If the track is not being tracked, then delete the track.
 				tracks.erase(tracks.begin() + i);
 			}
 		}
 
+		// Displays info about the video and tracking on the output frame.
 		displayInfo(imgCuboids, BLACK, CV_FONT_HERSHEY_SIMPLEX, 0.35, YELLOW);
 		displayInfo(imgBlobs, BLACK, CV_FONT_HERSHEY_SIMPLEX, 0.35, YELLOW);
 
+		// Draws the world coordinate axis using 1m vectors in the positive directions.
 		vector<Point3f> objectPoints; vector<Point2f> imagePoints;
 		objectPoints.push_back(Point3f(0.0, 0.0, 0.0));
 		objectPoints.push_back(Point3f(1.0, 0.0, 0.0));
 		objectPoints.push_back(Point3f(0.0, 1.0, 0.0));
 		objectPoints.push_back(Point3f(0.0, 0.0, 1.0));
 		projectPoints(objectPoints, rotationVector, translationVector, cameraMatrix, distCoeffs, imagePoints);
+
 		arrowedLine(imgCuboids, imagePoints[0], imagePoints[1], RED, 1, CV_AA);
 		arrowedLine(imgCuboids, imagePoints[0], imagePoints[2], BLUE, 1, CV_AA);
 		arrowedLine(imgCuboids, imagePoints[0], imagePoints[3], GREEN, 1, CV_AA);
@@ -213,6 +238,7 @@ int main(void)
 		arrowedLine(imgBlobs, imagePoints[0], imagePoints[2], BLUE, 1, CV_AA);
 		arrowedLine(imgBlobs, imagePoints[0], imagePoints[3], GREEN, 1, CV_AA);
 
+		// Display the output frames.
 		namedWindow("Cuboids");
 		namedWindow("Blobs");
 		moveWindow("Cuboids", 0, 0);
@@ -229,10 +255,15 @@ int main(void)
 		imshow("Contours", img_contours);
 		imshow("Convex Hulls", img_convexHulls);*/
 
+		// Clone the second frame and set it equal to the first frame.
 		currentFrame = nextFrame.clone();
+		// Read a new frame and set it equal to the second frame.
 		capture.read(nextFrame);
 
-		key = waitKey(1000 / frameRate/* 0*/);
+		// wait for key press
+		key = waitKey(1000 / frameRate /*0*/);
+
+		// If space bar is pressed print out the following frames. (To make it easy to save results.)
 		if (key == 32)
 		{
 			imwrite("original-frame" + to_string(currentFrameCount) + ".jpg", currentFrame);
@@ -250,19 +281,25 @@ int main(void)
 	return 0;
 }
 
+///////////////////////----- MATCHING ALGORITHM -----//////////////////////////////
+
 void matchBlobs(vector<Blob> &blobs)
 {
+	// Loop through all the tracks and set them as "not tracking".
 	for (int i = 0; i < tracks.size(); i++)
 	{
 		tracks[i].setBoolTrackUpdated(false);
 	}
 
+	// Loop through all the blobs in the current frame.
 	for (int i = 0; i < blobs.size(); i++)
 	{
+
 		double leastDistance = 100000;
 		int index_leastDistance;
 		Point center = blobs[i].getCenter();
 
+		// Loop through all the tracks and find the track which has its last added blob's average flow head nearest to the center of the blob of the current loop.
 		for (int j = 0; j < tracks.size(); j++)
 		{
 			double sumDistances = 0;
@@ -284,11 +321,13 @@ void matchBlobs(vector<Blob> &blobs)
 			}
 		}
 
+		// If the least distance found is less than half of the diagonal for the blob's bounding box i.e. if the flow head falls on the bounding box, add the blob to the found track.
 		if (leastDistance < blobs[i].getDiagonalSize() * 0.5)
 		{
 			tracks[index_leastDistance].add(blobs[i]);
 		}
 
+		// Or else it is a new track and create a new track.
 		else
 		{
 			trackCount++;
@@ -298,6 +337,7 @@ void matchBlobs(vector<Blob> &blobs)
 	}
 }
 
+/////////////////////----- METHOD FOR DISPLAYING TRACKING INFORMATION -----///////////////////////
 
 void displayInfo(Mat &outputFrame, Scalar backgroundColor, int fontFace, double fontScale, Scalar fontColor)
 {
